@@ -1,0 +1,55 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent"
+    android:layout_height="wrap_content" android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    android:paddingBottom="@dimen/activity_vertical_margin" tools:context=".MainActivity"><![CDATA[
+
+    TextView android:text="Run!" android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/" />
+
+
+
+    ]]>
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Plan Route"
+        android:id="@+id/planRoute"
+        android:onClick="startRoutePlan"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentStart="true" />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Track a Run"
+        android:id="@+id/trackRun"
+        android:onClick="configureTrack"
+        android:layout_marginTop="10dp"
+        android:layout_below="@id/planRoute"
+        android:layout_alignParentStart="true" />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="My Routes"
+        android:id="@+id/myRoutes"
+        android:layout_marginTop="10dp"
+        android:layout_below="@id/trackRun"
+        android:layout_alignParentStart="true"
+        android:onClick="showRoutes" />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Weather"
+        android:id="@+id/checkWeather"
+        android:layout_marginTop="10dp"
+        android:layout_below="@id/myRoutes"
+        android:layout_alignParentStart="true"
+        android:onClick="showWeather" />
+
+</RelativeLayout>

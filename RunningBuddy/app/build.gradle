@@ -1,0 +1,33 @@
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion 23
+    buildToolsVersion "23.0.3"
+
+    defaultConfig {
+        applicationId "jmidds17.runningbuddy"
+        minSdkVersion 21
+        targetSdkVersion 23
+        versionCode 1
+        versionName "1.0"
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+dependencies {
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+    // enabling google play services for google maps
+    // IDE says 9.6 is out of date but updated versions won't work in the emulator
+    // Google (2016) Setting up Google play services [online]
+    // Mountain View, California: Google. Available from
+    // https://developers.google.com/android/guides/setup [Accessed 21 November 2016].
+    compile 'com.google.android.gms:play-services-maps:9.6.0'
+    compile 'com.google.android.gms:play-services-location:9.6.0'
+    compile 'com.android.volley:volley:1.0.0'
+
+}

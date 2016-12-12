@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="jmidds17.runningbuddy" >
+
+    <!-- Course/Fine location needed for planning and tracking routes -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <application
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:theme="@style/AppTheme" >
+        <activity
+            android:name=".MainActivity"
+            android:label="@string/app_name" >
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".PlanRoute"
+            android:label="@string/title_activity_plan_route"
+            android:parentActivityName=".MainActivity" >
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="jmidds17.runningbuddy.MainActivity" />
+        </activity>
+
+        <!--
+        Adding an API-key for android maps api, enables me to use google maps in a fragment
+        Google (2016) Get API Key [online]
+        // Mountain View, California: Google. Available from
+        // https://developers.google.com/maps/documentation/android-api/signup#use-key [Accessed 26 November 2016].
+        -->
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyD1YApV9hQIdg-N6PgkVAev-nTOFGYJnKY" />
+
+        <activity
+            android:name=".SavedRoutes"
+            android:label="@string/title_activity_saved_routes"
+            android:parentActivityName=".MainActivity" >
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="jmidds17.runningbuddy.MainActivity" />
+        </activity>
+        <activity
+            android:name=".TrackRun"
+            android:label="@string/title_activity_track_run"
+            android:parentActivityName=".MainActivity" >
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="jmidds17.runningbuddy.MainActivity" />
+        </activity>
+    </application>
+
+</manifest>
