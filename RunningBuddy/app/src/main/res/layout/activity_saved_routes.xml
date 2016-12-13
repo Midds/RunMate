@@ -11,17 +11,27 @@
         android:layout_height="wrap_content"
         android:id="@+id/routesListView"
         android:layout_alignParentTop="true"
-        android:layout_centerHorizontal="true" />
+        android:layout_centerHorizontal="true"
+        android:layout_above="@+id/addRouteButton" />
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textAppearance="?android:attr/textAppearanceMedium"
-        android:text="No routes found! Click Plan Route below to make your first Route."
+        android:text="No routes found! Tap New Route below to make your first Route."
         android:id="@+id/noRoutesText"
         android:layout_alignParentTop="true"
         android:layout_centerHorizontal="true"
         android:layout_marginTop="48dp"
         android:visibility="invisible" />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="New Route"
+        android:id="@+id/addRouteButton"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:onClick="planNewRoute" />
 
 </RelativeLayout>

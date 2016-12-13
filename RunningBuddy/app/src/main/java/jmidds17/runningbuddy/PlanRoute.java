@@ -106,7 +106,7 @@ public class PlanRoute extends Activity implements GoogleApiClient.ConnectionCal
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_plan_route);
 
-        // Getting a handle to the fragment where there map is located
+        // Getting a handle to the fragment where the map is located
         getMapFragmentHandle();
 
         // Create an instance of GoogleAPIClient when activity is created(if one doesn't exist).

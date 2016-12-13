@@ -6,16 +6,25 @@
     android:paddingBottom="@dimen/activity_vertical_margin"
     tools:context="jmidds17.runningbuddy.TrackRun">
 
-    <TextView android:text="@string/hello_world" android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
-
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Start Run!"
         android:id="@+id/startRunButton"
+        android:onClick="startRunTimer"
         android:layout_alignParentBottom="true"
-        android:layout_centerHorizontal="true"
-        android:onClick="startRunTimer" />
+        android:layout_alignParentStart="true" />
+
+    <fragment
+        tools:ignore="MissingPrefix"
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:map="http://schemas.android.com/apk/res-auto"
+        map:uiZoomControls="true"
+        android:name="com.google.android.gms.maps.MapFragment"
+        android:id="@+id/trackMap"
+        android:layout_width="match_parent"
+        android:layout_height="fill_parent"
+        android:layout_above="@+id/startRunButton"
+        android:layout_alignParentEnd="true" />
 
 </RelativeLayout>

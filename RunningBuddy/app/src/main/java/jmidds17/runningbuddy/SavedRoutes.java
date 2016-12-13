@@ -1,6 +1,7 @@
 package jmidds17.runningbuddy;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -29,6 +30,13 @@ public class SavedRoutes extends Activity {
 
     public void bindRoutesToList(ListView routesList) {
 
+    }
+
+    public void planNewRoute(View view) {
+        // create an intent to start the activity called MainActivity
+        Intent intent = new Intent(this, PlanRoute.class);
+        // start Activity
+        startActivity(intent);
     }
 
     @Override
