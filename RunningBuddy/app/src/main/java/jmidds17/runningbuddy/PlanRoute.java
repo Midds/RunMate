@@ -61,7 +61,7 @@ public class PlanRoute extends Activity implements GoogleApiClient.ConnectionCal
     public GoogleApiClient mGoogleApiClient;
     public Location mLastLocation;
     LocationRequest mLocationRequest = new LocationRequest();
-    public Location mCurrentLocation;
+    static public Location mCurrentLocation;
     boolean mRequestingLocationUpdates;
     private GoogleMap customMap;
     private Marker currentLocMarker;

@@ -66,7 +66,6 @@ public class httpConnect {
                     } catch (Exception e) {
                         Log.e(TAG, "Error parsing data " + e.toString());
                     }
-                    Log.d("Json dump:http connect", json);
                     // return JSON String containing data to activity
                     return json;
             }
