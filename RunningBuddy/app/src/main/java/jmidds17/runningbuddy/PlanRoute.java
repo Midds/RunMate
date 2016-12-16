@@ -76,6 +76,7 @@ public class PlanRoute extends Activity implements GoogleApiClient.ConnectionCal
 
 
     public void onMapReady(GoogleMap map) {
+        Log.e("onMapReady", map.toString());
         customMap = map; // using global variable customMap so it can be changed in other scopes
         // When map is clicked place a marker
         // Rathore, A. (2013) Add Marker on Android Google Map via touch or tap.
@@ -103,6 +104,8 @@ public class PlanRoute extends Activity implements GoogleApiClient.ConnectionCal
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        Log.e("onCreate", "huh");
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_plan_route);
 
@@ -118,6 +121,8 @@ public class PlanRoute extends Activity implements GoogleApiClient.ConnectionCal
 
     @Override
     public void onConnected(Bundle connectionHint) {
+        Log.e("onConnected", "huh");
+
         // getting last know location on the phone - not a new location
         if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             mLastLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
@@ -143,6 +148,8 @@ public class PlanRoute extends Activity implements GoogleApiClient.ConnectionCal
     }
 
     private void getMapFragmentHandle(){
+        Log.e("getMapFragmentHandle", "huh");
+
         // Google (2016) Map Objects [online]
         // Mountain View, California: Google. Available from
         // https://developers.google.com/maps/documentation/android-api/map [Accessed 27 November 2016].
@@ -152,6 +159,7 @@ public class PlanRoute extends Activity implements GoogleApiClient.ConnectionCal
     }
 
     private void buildGoogleApiClient(){
+        Log.e("buildGoogleApiClient", "huh");
         // Google (2016) Getting the Last Known Location [online]
         // Mountain View, California: Google. Available from
         // https://developer.android.com/training/location/retrieve-current.html [Accessed 23 November 2016].
@@ -165,6 +173,7 @@ public class PlanRoute extends Activity implements GoogleApiClient.ConnectionCal
     }
 
     private void createLocationRequestBuilder(){
+        Log.e("createLocRequestBuilder", "huh");
         if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             createLocationRequest();
 
@@ -181,6 +190,8 @@ public class PlanRoute extends Activity implements GoogleApiClient.ConnectionCal
     }
     // Controls what the user first sees on the map (default location, zoom, markers)
     private void configureMapDefault() {
+        Log.e("configureMapDefault", "huh");
+
         customMap.clear(); // Clears current marker before adding an updated one
         if (mCurrentLocation != null) {
             // Google (2016) CameraUpdateFactory [online]
@@ -211,6 +222,7 @@ public class PlanRoute extends Activity implements GoogleApiClient.ConnectionCal
     }
 
     protected void createLocationRequest() {
+        Log.e("createLocationRequest", "huh");
         // Google (2016) Changing Location Settings: Set Up a Location Request [online]
         // Mountain View, California: Google. Available from
         // https://developer.android.com/training/location/change-location-settings.html [Accessed 23 November 2016].
@@ -333,6 +345,8 @@ public class PlanRoute extends Activity implements GoogleApiClient.ConnectionCal
     // https://developer.android.com/training/location/receive-location-updates.html [Accessed 23 November 2016].
     @Override
     public void onLocationChanged(Location location) {
+        Log.e("onLocationChanged", "huh");
+
         mCurrentLocation = location;
         boolean upDateFlag = false;
         //mLastUpdateTime = DateFormat.getTimeInstance().format(new Date());
@@ -345,15 +359,21 @@ public class PlanRoute extends Activity implements GoogleApiClient.ConnectionCal
     }
 
     private void updateUI() {
+        Log.e("updateUI", "huh");
+
         configureMapDefault();
     }
 
     protected void onStart() {
+        Log.e("onStart", "huh");
+
         mGoogleApiClient.connect();
         super.onStart();
     }
 
     protected void onStop() {
+        Log.e("onStop", "huh");
+
         mGoogleApiClient.disconnect();
         super.onStop();
     }
@@ -382,6 +402,7 @@ public class PlanRoute extends Activity implements GoogleApiClient.ConnectionCal
     }
 
     protected void startLocationUpdates() {
+        Log.e("startLocationUpdates", "huh");
         // If user has granted permission for the app to access location
         if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             // TODO: Consider calling
@@ -410,17 +431,22 @@ public class PlanRoute extends Activity implements GoogleApiClient.ConnectionCal
 
     @Override
     protected void onPause() {
+        Log.e("onPause", "huh");
         super.onPause();
         stopLocationUpdates();
     }
 
     protected void stopLocationUpdates() {
+        Log.e("stopLocationUpdates", "huh");
+
         LocationServices.FusedLocationApi.removeLocationUpdates(
                 mGoogleApiClient, this);
     }
 
     @Override
     public void onResume() {
+        Log.e("onResume", "huh");
+
         super.onResume();
         if (mGoogleApiClient.isConnected() && !mRequestingLocationUpdates) {
         startLocationUpdates();
@@ -429,11 +455,13 @@ public class PlanRoute extends Activity implements GoogleApiClient.ConnectionCal
 
     @Override
     public void onConnectionSuspended(int i) {
+        Log.e("onConnectionSuspended", "huh");
 
     }
 
     @Override
     public void onConnectionFailed(ConnectionResult connectionResult) {
+        Log.e("onConnectionFailed", "huh");
 
     }
 }

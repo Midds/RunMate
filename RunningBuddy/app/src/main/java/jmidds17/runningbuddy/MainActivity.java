@@ -38,7 +38,7 @@ import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationServices;
 
-public class MainActivity extends Activity implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
+public class MainActivity extends Activity {
     // global variables for the weather widget
     String weatherLocation;
     String weatherTemperature;
@@ -46,67 +46,19 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
     String weatherWind;
     String weatherIcon;
     static Bitmap bitmap;
-    Location mLastLocation;
-    GoogleApiClient mGoogleApiClient;
-
     // filename for saving location data
     String filename = "latestAPIRequest";
+    LocationHelper mLoc;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        mLoc = new LocationHelper(MainActivity.this);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // Create an instance of GoogleAPIClient.
-        if (mGoogleApiClient == null) {
-            mGoogleApiClient = new GoogleApiClient.Builder(this)
-                    .addApi(LocationServices.API)
-                    .addConnectionCallbacks(this)
-                    .addOnConnectionFailedListener(this)
-                    .build();
-        }
-
-        checkWeather();
     }
 
-    public void onConnected(Bundle connectionHint) {
-        // getting last know location on the phone - not a new location
-        if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            mLastLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
-        }
-        Log.e("TAG", String.valueOf(mLastLocation.getLatitude()));
-
-        // Google (2016) Receiving Location Updates: Request Location Updates [online]
-        // Mountain View, California: Google. Available from
-        // https://developer.android.com/training/location/receive-location-updates.html [Accessed 23 November 2016].
-
-        // below If refers to a boolean flag that is used to track whether user has turned
-        // location updates on or off
-        // for now i will assume this is true and startLocationUpdates
-        //if (mRequestingLocationUpdates) {
-        //    startLocationUpdates();
-        //}
-    }
-
-    protected void onStart() {
-        mGoogleApiClient.connect();
-        super.onStart();
-    }
-
-    protected void onStop() {
-        mGoogleApiClient.disconnect();
-        super.onStop();
-    }
-
-    @Override
-    public void onConnectionSuspended(int i) {
-
-    }
-
-    @Override
-    public void onConnectionFailed(ConnectionResult connectionResult) {
-
-    }
 
     // Gets called when app comes back into view eg after user has hit the home screen and returns to app screen.
     @Override
@@ -114,12 +66,22 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
         Log.e("TAG", "onResume ");
         super.onResume();
         checkWeather();
+
+
     }
 
     // called when user touches the Plan Route button
     public void startRoutePlan(View view) {
         // intent to start PlanRoute
         Intent intent = new Intent(this, PlanRoute.class);
+        // start Activity
+        startActivity(intent);
+    }
+
+    // called when user touches the Plan Route button
+    public void startRoutePlan2(View view) {
+        // intent to start PlanRoute
+        Intent intent = new Intent(this, PlanRoute2.class);
         // start Activity
         startActivity(intent);
     }
@@ -134,9 +96,9 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
 
     public void configureTrack(View view) {
         // create an intent to start TrackRun
-        Intent intent = new Intent(this, TrackRun.class);
+        //Intent intent = new Intent(this, TrackRun.class);
         // start Activity
-        startActivity(intent);
+        //startActivity(intent);
     }
 
     // Called in oncreate and also in onresume
@@ -167,18 +129,40 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
 
     public class AsyncTaskParseJson extends AsyncTask<String, String, String> {
 
-        // set the url of the web service to call
+        boolean isConnected;
+        // Set the url of the web service to call. This will be used as default url if LocationHelper
+        // cannot get an updated location to use for whatever reason (gps not enabled).
         String yourServiceUrl = "http://api.openweathermap.org/data/2.5/weather?lat=53.2260276&lon=-0.5431253&units=metric&APPID=9394674264a196a20ada133ea74bc768";
 
+
+        // This method is used for preparing the locationhelper class. It creates an instance of the
+        // class before calling the getLatitude and getLongitude methods in "doInBackground"
+        // This is needed to give the LocationHelper time to connect the GoogleApi. If these methods
+        // are called at the same time than this is, then they will return null.
         @Override
-        // this method is used for......................
-        protected void onPreExecute() {}
+        protected void onPreExecute() {
+            Log.e("onPreExecute", "huh");
+
+        }
 
         @Override
-        // this method is used for...................
+        // This method will get the last long/lat from the LocationHelper class to append to the api call URL.
+        // After this the call will be made using the httpConnect class, and the returned JSON will be parsed
+        // and weatherValues will be changed to reflect this.
         protected String doInBackground(String... arg0)  {
-
             try {
+                Log.e("doInBackground", "huh");
+                Log.e("doInBg1", yourServiceUrl);
+                mLoc.connectToApi();
+                // Changes the long and lat in the serviceURL to lat known long/lat
+                if (mLoc.getLatitude() != null && mLoc.getLongitude() != null){
+                    Log.e("doInBg", " NOT NULL");
+                    yourServiceUrl = "http://api.openweathermap.org/data/2.5/weather?lat=" +
+                            mLoc.getLatitude() + "&lon=" + mLoc.getLongitude() +
+                            "&units=metric&APPID=9394674264a196a20ada133ea74bc768";
+                }
+                Log.e("doInBg2", yourServiceUrl);
+
                 // create new instance of the httpConnect class
                 httpConnect jParser = new httpConnect();
 
@@ -186,7 +170,7 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
                 String json = jParser.getJSONFromUrl(yourServiceUrl);
 
                 JSONObject jObject = new JSONObject(json);
-                // save returned json to your test string
+                // save returned json to your test string // delete me
                 // weatherData = jObject.getString("temp");
 
                 // Saves the json string to file if it isn't null. This can then be used later to give
@@ -211,11 +195,11 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
                     // Saving wanted values to file for later use, each value on a new line for easier parsing later on
                     saveLatestRequest(weatherLocation + "\n" + String.valueOf(weatherTemperature) + "\n" + weatherDescription + "\n" + String.valueOf(weatherWind));
                     //saveLatestRequest(json);
-                    // updating the text views on the app with new info
-                    setWeatherWidget();
+
                 }
                 // If call from httpconnect returns null. Try and access the last file saved.
                 if (json == null) {
+                    Log.e("JSON Null", "using saved to file data");
                     getMostRecent();
                 }
             } catch (Exception e) {
@@ -225,9 +209,14 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
         }
 
         @Override
-        // below method will run when service HTTP request is complete, will then bind tweet text in arrayList to ListView
+        // Below method will run when service HTTP request is complete, this will stop location updates
+        // from LocationHelper, as well as setting the new information to their text views.
         protected void onPostExecute(String strFromDoInBg) {
+            Log.e("onPostExecute", "huh");
+            //mLoc.stopLocationUpdates();
+            // updating the text views on the app with new info
             setWeatherWidget();
+
         }
     }
 

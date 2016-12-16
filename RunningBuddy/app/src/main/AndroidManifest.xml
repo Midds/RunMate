@@ -56,6 +56,14 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="jmidds17.runningbuddy.MainActivity" />
         </activity>
+        <activity
+            android:name=".PlanRoute2"
+            android:label="@string/title_activity_plan_route2"
+            android:parentActivityName=".MainActivity" >
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="jmidds17.runningbuddy.MainActivity" />
+        </activity>
     </application>
 
 </manifest>
