@@ -53,7 +53,6 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        mLoc = new LocationHelper(MainActivity.this);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
@@ -142,6 +141,7 @@ public class MainActivity extends Activity {
         @Override
         protected void onPreExecute() {
             Log.e("onPreExecute", "huh");
+            mLoc = new LocationHelper(MainActivity.this);
 
         }
 
@@ -153,7 +153,7 @@ public class MainActivity extends Activity {
             try {
                 Log.e("doInBackground", "huh");
                 Log.e("doInBg1", yourServiceUrl);
-                mLoc.connectToApi();
+
                 // Changes the long and lat in the serviceURL to lat known long/lat
                 if (mLoc.getLatitude() != null && mLoc.getLongitude() != null){
                     Log.e("doInBg", " NOT NULL");

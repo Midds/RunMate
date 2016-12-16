@@ -40,6 +40,7 @@ public class LocationHelper extends MainActivity implements GoogleApiClient.Conn
     private String latitude;
     private String longitude;
     private Context mContext;
+    boolean upToDate = false;
 
     public LocationHelper(Context context) {
         Log.e("LocationHelper", "huh");
@@ -49,21 +50,21 @@ public class LocationHelper extends MainActivity implements GoogleApiClient.Conn
         buildGoogleApiClient();
         // Create a location request
         createLocationRequest();
-
-
-
-        //mGoogleApiClient.connect();
-        //createLocationRequestBuilder();
-        //startLocationUpdates();
-
+        // Performs mGoogleApiClient.connect as well as looping to ensure it finishes connection before continuing.
+        connectToApi();
     }
 
+    // called to connect to google play services before other methods are called.
     public void connectToApi(){
         Log.e("connectToApi", "huh");
         // Connect the the GoogleApiClient
         mGoogleApiClient.connect();
 
-        while (!mGoogleApiClient.isConnected())
+        // While loop ensures that mGoogleApiClient.connect(); fully runs and gets the currentLocation before
+        // moving on. This is in place to stop getLatitude & getLongitude from returning null or old values.
+        // upToDate will evaluate to true upon either successfull connection or unsuccessful or suspended connection,
+        // so this should not result in an infinite loop under any circumstances.
+        while (!upToDate)
         {
             // wait
         }
@@ -88,10 +89,7 @@ public class LocationHelper extends MainActivity implements GoogleApiClient.Conn
     public String getLatitude() {
         Log.e("getLatitude", "huh");
 
-        while (!mGoogleApiClient.isConnected())
-        {
-            // wait
-        }
+
 
         if (mCurrentLocation != null)
         {
@@ -144,19 +142,20 @@ public class LocationHelper extends MainActivity implements GoogleApiClient.Conn
             startLocationUpdates();
         }
 
-
+        upToDate = true; // Stops the loop in connectToApi() now startLocationUpdates() has been called.
     }
 
     @Override
     public void onConnectionSuspended(int i) {
         Log.e("onConnectionSuspended", "huh");
+        upToDate = true; // Stops the loop in connectToApi() if connection gets suspended
 
     }
 
     @Override
     public void onConnectionFailed(ConnectionResult connectionResult) {
         Log.e("onConnectionFailed", "huh");
-
+        upToDate = true; // Stops the loop in connectToApi() if connection fails
     }
 
     protected void createLocationRequest() {
