@@ -1,6 +1,7 @@
 package jmidds17.runningbuddy;
 
 import android.app.Activity;
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -64,7 +65,7 @@ public class MainActivity extends Activity {
     public void onResume() {
         Log.e("TAG", "onResume ");
         super.onResume();
-        checkWeather();
+        mLoc = new LocationHelper(MainActivity.this);
 
 
     }
@@ -98,6 +99,9 @@ public class MainActivity extends Activity {
         //Intent intent = new Intent(this, TrackRun.class);
         // start Activity
         //startActivity(intent);
+        mLoc.connectToApi();
+        mLoc.startLocationUpdates();
+        checkWeather();
     }
 
     // Called in oncreate and also in onresume
@@ -129,6 +133,7 @@ public class MainActivity extends Activity {
     public class AsyncTaskParseJson extends AsyncTask<String, String, String> {
 
         boolean isConnected;
+        ProgressDialog pd;
         // Set the url of the web service to call. This will be used as default url if LocationHelper
         // cannot get an updated location to use for whatever reason (gps not enabled).
         String yourServiceUrl = "http://api.openweathermap.org/data/2.5/weather?lat=53.2260276&lon=-0.5431253&units=metric&APPID=9394674264a196a20ada133ea74bc768";
@@ -141,8 +146,7 @@ public class MainActivity extends Activity {
         @Override
         protected void onPreExecute() {
             Log.e("onPreExecute", "huh");
-            mLoc = new LocationHelper(MainActivity.this);
-
+            pd=ProgressDialog.show(MainActivity.this,"","Please Wait",false);
         }
 
         @Override
@@ -154,24 +158,24 @@ public class MainActivity extends Activity {
                 Log.e("doInBackground", "huh");
                 Log.e("doInBg1", yourServiceUrl);
 
+                String latitude = mLoc.getLatitude();
+                String longitude = mLoc.getLongitude();
+                Log.e("booooggs", latitude);
+
                 // Changes the long and lat in the serviceURL to lat known long/lat
-                if (mLoc.getLatitude() != null && mLoc.getLongitude() != null){
+                if (latitude != null && longitude != null){
                     Log.e("doInBg", " NOT NULL");
                     yourServiceUrl = "http://api.openweathermap.org/data/2.5/weather?lat=" +
-                            mLoc.getLatitude() + "&lon=" + mLoc.getLongitude() +
+                            latitude + "&lon=" + longitude +
                             "&units=metric&APPID=9394674264a196a20ada133ea74bc768";
                 }
                 Log.e("doInBg2", yourServiceUrl);
 
                 // create new instance of the httpConnect class
                 httpConnect jParser = new httpConnect();
-
                 // get json string from service url
                 String json = jParser.getJSONFromUrl(yourServiceUrl);
-
                 JSONObject jObject = new JSONObject(json);
-                // save returned json to your test string // delete me
-                // weatherData = jObject.getString("temp");
 
                 // Saves the json string to file if it isn't null. This can then be used later to give
                 // data even if no internet connection or the api call limit is reached.
@@ -182,6 +186,7 @@ public class MainActivity extends Activity {
                     // converting weather temp to celsius (it is returned as kelvin by api)
                     weatherTemperature = String.valueOf((int) jObject.getJSONObject("main").getDouble("temp")); // Turning double to int to remove the decimal places in the temperature
                     weatherDescription = jObject.getJSONArray("weather").getJSONObject(0).getString("description"); // Weather description is stored in a string, in an object, within an array, within the main object.
+                    weatherDescription = weatherDescription.substring(0, 1).toUpperCase() + weatherDescription.substring(1);
                     weatherWind = String.valueOf(jObject.getJSONObject("wind").getDouble("speed")); // Wind speed stored in a double, within an object, within the main object.
                     weatherIcon = jObject.getJSONArray("weather").getJSONObject(0).getString("icon");
 
@@ -216,7 +221,7 @@ public class MainActivity extends Activity {
             //mLoc.stopLocationUpdates();
             // updating the text views on the app with new info
             setWeatherWidget();
-
+            pd.dismiss();
         }
     }
 

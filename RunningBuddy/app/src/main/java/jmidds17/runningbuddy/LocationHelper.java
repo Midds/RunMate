@@ -50,24 +50,14 @@ public class LocationHelper extends MainActivity implements GoogleApiClient.Conn
         buildGoogleApiClient();
         // Create a location request
         createLocationRequest();
-        // Performs mGoogleApiClient.connect as well as looping to ensure it finishes connection before continuing.
         connectToApi();
+
+
     }
 
-    // called to connect to google play services before other methods are called.
-    public void connectToApi(){
-        Log.e("connectToApi", "huh");
-        // Connect the the GoogleApiClient
+    public void connectToApi (){
+        // Performs mGoogleApiClient.connect
         mGoogleApiClient.connect();
-
-        // While loop ensures that mGoogleApiClient.connect(); fully runs and gets the currentLocation before
-        // moving on. This is in place to stop getLatitude & getLongitude from returning null or old values.
-        // upToDate will evaluate to true upon either successfull connection or unsuccessful or suspended connection,
-        // so this should not result in an infinite loop under any circumstances.
-        while (!upToDate)
-        {
-            // wait
-        }
     }
 
     private void buildGoogleApiClient() {
@@ -89,30 +79,24 @@ public class LocationHelper extends MainActivity implements GoogleApiClient.Conn
     public String getLatitude() {
         Log.e("getLatitude", "huh");
 
-
-
-        if (mCurrentLocation != null)
-        {
+        if (mCurrentLocation != null) {
             latitude = String.valueOf(mCurrentLocation.getLatitude());
-            Log.e("getLatitude new current", String.valueOf(mCurrentLocation.getLatitude()));
-
         }
         else if (mLastLocation != null) {
             latitude = String.valueOf(mLastLocation.getLatitude());
-            Log.e("getLatitude new last", String.valueOf(mLastLocation.getLatitude()));
-
         }
+
         return latitude;
     }
 
     public String getLongitude() {
-        if (mCurrentLocation != null)
-        {
+        if (mCurrentLocation != null) {
             longitude = String.valueOf(mCurrentLocation.getLongitude());
         }
         else if (mLastLocation != null) {
             longitude = String.valueOf(mLastLocation.getLongitude());
         }
+
         return longitude;
     }
 

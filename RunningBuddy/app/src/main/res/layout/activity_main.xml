@@ -43,10 +43,11 @@
         android:onClick="showRoutes" />
 
     <RelativeLayout
+        android:background="@drawable/weather_widget_border"
         android:layout_width="match_parent"
-        android:layout_height="100dp"
+        android:layout_height="80dp"
         android:layout_toEndOf="@+id/myRoutes"
-        android:layout_marginRight="20dp"
+        android:layout_marginRight="25dp"
         android:layout_marginLeft="20dp"
         android:layout_marginBottom="20dp"
         android:layout_alignParentStart="true"
@@ -73,7 +74,7 @@
             android:text="Location"
             android:id="@+id/weatherLocation"
             android:layout_alignParentBottom="true"
-            android:layout_alignParentEnd="true" />
+            android:layout_alignEnd="@+id/weatherTemperature" />
 
         <TextView
             android:layout_width="wrap_content"
@@ -81,22 +82,24 @@
             android:textAppearance="?android:attr/textAppearanceMedium"
             android:text="Wind Conditions"
             android:id="@+id/weatherWind"
-            android:layout_below="@+id/weatherTemperature"
-            android:layout_alignParentEnd="true" />
+            android:layout_above="@+id/weatherDescription"
+            android:layout_alignEnd="@+id/weatherLocation" />
 
         <TextView
+            android:layout_marginStart="10dp"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textAppearance="?android:attr/textAppearanceMedium"
-            android:text="Medium Text"
+            android:text="Description"
             android:id="@+id/weatherDescription"
-            android:layout_above="@+id/weatherLocation"
-            android:layout_alignEnd="@+id/weatherLocation" />
+            android:layout_alignBottom="@+id/weatherLocation"
+            android:layout_alignParentStart="true" />
 
         <ImageView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:id="@+id/weatherIcon"
+            android:layout_marginStart="20dp"
             android:layout_centerVertical="true"
             android:layout_centerHorizontal="true"
             android:layout_alignParentStart="true" />
@@ -106,7 +109,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Plan Route 2"
-        android:id="@+id/planButton2"
+        android:id="@+id/button2"
         android:layout_below="@+id/myRoutes"
         android:layout_alignParentStart="true"
         android:onClick="startRoutePlan2" />
