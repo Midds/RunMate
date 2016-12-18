@@ -77,7 +77,7 @@ public class PlanRoute2 extends Activity implements OnMapReadyCallback {
     // Mountain View, California: Google. Available from
     // https://developer.android.com/reference/android/location/Location.html [Accessed 15 December 2016].
     public float calculateDistance(List<Marker> routeToMeasure){
-        float finalDistance = 0; // double to hold the final tallied distance
+        float distance = 0; // double to hold the final tallied distance
         float[] results = new float[routeToMeasure.size()]; // float array to hold the distances between each location
 
         // Getting distance between start point and first waypoint (because start point(current phone location) is not stored in 'wayPoints')
@@ -94,10 +94,11 @@ public class PlanRoute2 extends Activity implements OnMapReadyCallback {
 
         // Tallying up results[] to get the final run distance
         for (float result : results) {
-            finalDistance = finalDistance + result;
+            distance = distance + result;
         }
 
-        return finalDistance;
+
+        return distance;
     }
 
     // Saves the current markers as a route to a database and takes the user to SavedRoutes activity.

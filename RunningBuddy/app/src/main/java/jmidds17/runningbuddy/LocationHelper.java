@@ -108,7 +108,7 @@ public class LocationHelper extends MainActivity implements GoogleApiClient.Conn
         if (ContextCompat.checkSelfPermission(mContext, android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             mLastLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
         }
-        Log.e("getLatitude con", String.valueOf(mLastLocation.getLatitude()));
+        //Log.e("getLatitude con", String.valueOf(mLastLocation.getLatitude()));
         // Google (2016) Receiving Location Updates: Request Location Updates [online]
         // Mountain View, California: Google. Available from
         // https://developer.android.com/training/location/receive-location-updates.html [Accessed 23 November 2016].

@@ -18,12 +18,13 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textAppearance="?android:attr/textAppearanceMedium"
-        android:text="No routes found! Tap New Route below to make your first Route."
+        android:text="No routes found! \n\nTap New Route below to make your first Route."
         android:id="@+id/noRoutesText"
         android:layout_alignParentTop="true"
         android:layout_centerHorizontal="true"
         android:layout_marginTop="48dp"
-        android:visibility="invisible" />
+        android:visibility="visible"
+        android:autoText="false" />
 
     <Button
         android:layout_width="wrap_content"
