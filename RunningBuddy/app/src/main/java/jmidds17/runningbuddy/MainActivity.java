@@ -57,6 +57,8 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        mLoc = new LocationHelper(MainActivity.this);
+
     }
 
 
@@ -65,8 +67,6 @@ public class MainActivity extends Activity {
     public void onResume() {
         Log.e("TAG", "onResume ");
         super.onResume();
-        mLoc = new LocationHelper(MainActivity.this);
-
 
     }
 
@@ -94,7 +94,7 @@ public class MainActivity extends Activity {
         startActivity(intent);
     }
 
-    public void configureTrack(View view) {
+    public void configureTrack() {
         // create an intent to start TrackRun
         //Intent intent = new Intent(this, TrackRun.class);
         // start Activity

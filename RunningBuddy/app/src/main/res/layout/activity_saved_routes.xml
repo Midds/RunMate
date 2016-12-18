@@ -23,7 +23,7 @@
         android:layout_alignParentTop="true"
         android:layout_centerHorizontal="true"
         android:layout_marginTop="48dp"
-        android:visibility="visible"
+        android:visibility="invisible"
         android:autoText="false" />
 
     <Button

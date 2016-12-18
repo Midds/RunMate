@@ -1,9 +1,13 @@
 package jmidds17.runningbuddy;
 
 import android.app.Activity;
+import android.app.ProgressDialog;
 import android.content.ContentValues;
 import android.database.sqlite.SQLiteDatabase;
+import android.graphics.BitmapFactory;
 import android.location.Location;
+import android.net.wifi.WifiManager;
+import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -25,6 +29,10 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 
+import org.json.JSONObject;
+
+import java.io.InputStream;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -50,6 +58,9 @@ public class PlanRoute2 extends Activity implements OnMapReadyCallback {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         Log.e("onCreate", "huh");
+        // creating instance of locationhelper.
+        mLoc = new LocationHelper(PlanRoute2.this);
+
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_plan_route);
@@ -58,10 +69,20 @@ public class PlanRoute2 extends Activity implements OnMapReadyCallback {
         // Getting a handle to the fragment where the map is located
         getMapFragmentHandle();
 
-        // creating instance of locationhelper.
-        mLoc = new LocationHelper(PlanRoute2.this);
+
 
     }
+
+    protected void onStart() {
+        mLoc.mGoogleApiClient.connect();
+        super.onStart();
+    }
+
+    protected void onStop() {
+        mLoc.mGoogleApiClient.disconnect();
+        super.onStop();
+    }
+
 
     public void textChangeButton(View view) {
         mLoc = new LocationHelper(PlanRoute2.this);
@@ -140,9 +161,22 @@ public class PlanRoute2 extends Activity implements OnMapReadyCallback {
         Log.e("TAG", "onResume ");
         super.onResume();
 
+
+
         // Getting new location coordinates (before configuring map with these coordinates)
-        latitude = mLoc.getLatitude();
-        longitude = mLoc.getLongitude();
+
+
+        if (latitude != null)
+        {
+            Log.e("onResume", String.valueOf(latitude));
+        }
+        else
+        {
+            Log.e("onResume planroute2", "latitude null");
+        }
+
+        new AsyncTaskGetLocation().execute();
+
     }
 
     // Resets the map
@@ -279,4 +313,78 @@ public class PlanRoute2 extends Activity implements OnMapReadyCallback {
     }
 
 
+    public class AsyncTaskGetLocation extends AsyncTask<String, String, String> {
+
+        ProgressDialog pd;
+
+        @Override
+        protected void onPreExecute() {
+            Log.e("onPreExecute", "huh");
+            pd=ProgressDialog.show(PlanRoute2.this,"","Please Wait",false);
+        }
+
+        @Override
+        // This method will get the last long/lat from the LocationHelper class to append to the api call URL.
+        // After this the call will be made using the httpConnect class, and the returned JSON will be parsed
+        // and weatherValues will be changed to reflect this.
+        protected String doInBackground(String... arg0)  {
+            try {
+                Log.e("doInBackground ", "planRoute2 huh");
+
+
+
+                while (mLoc.mGoogleApiClient.isConnecting())
+                {
+                    Log.e("doInBackground ", "its connecting");
+                    publishProgress();
+                    if (mLoc.mGoogleApiClient.isConnected())
+                    {
+                        Log.e("doInBackground ", "ITS DONE JIM!");
+                        break;
+                    }
+                }
+
+                String latitudea = mLoc.getLatitude();
+                String longitudea = mLoc.getLongitude();
+
+
+                if(latitudea != null)
+                {
+                    Log.e("doInBackground jim! ", String.valueOf(latitude));
+                }
+                else
+                {
+                    Log.e("doInBackground", "its null jim");
+
+                }
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return null;
+        }
+
+        protected void onProgressUpdate()
+        {
+
+        }
+
+        @Override
+        // Below method will run when service HTTP request is complete, this will stop location updates
+        // from LocationHelper, as well as setting the new information to their text views.
+        protected void onPostExecute(String strFromDoInBg) {
+            Log.e("onPostExecute", "huh");
+            //mLoc.stopLocationUpdates();
+            // updating the text views on the app with new info
+            latitude = mLoc.getLatitude();
+            longitude = mLoc.getLongitude();
+            if(latitude != null)
+            {
+                Log.e("onPostExecute", latitude);
+            }
+
+            configureMapDefault();
+            pd.dismiss();
+        }
+    }
 }

@@ -40,7 +40,7 @@ public class LocationHelper extends MainActivity implements GoogleApiClient.Conn
     private String latitude;
     private String longitude;
     private Context mContext;
-    boolean upToDate = false;
+    static public boolean upToDate = false;
 
     public LocationHelper(Context context) {
         Log.e("LocationHelper", "huh");
@@ -56,21 +56,24 @@ public class LocationHelper extends MainActivity implements GoogleApiClient.Conn
     }
 
     public void connectToApi (){
+        Log.e("connectToApi", "huh");
+
         // Performs mGoogleApiClient.connect
         mGoogleApiClient.connect();
     }
 
-    private void buildGoogleApiClient() {
+    public void buildGoogleApiClient() {
         Log.e("buildGoogleApiClient", "huh");
 
         // Google (2016) Getting the Last Known Location [online]
         // Mountain View, California: Google. Available from
         // https://developer.android.com/training/location/retrieve-current.html [Accessed 23 November 2016].
         if (mGoogleApiClient == null) {
+            Log.e("building new", "it wasnt null");
             mGoogleApiClient = new GoogleApiClient.Builder(mContext)
+                    .addApi(LocationServices.API)
                     .addConnectionCallbacks(this)
                     .addOnConnectionFailedListener(this)
-                    .addApi(LocationServices.API)
                     .build();
         }
     }
@@ -78,6 +81,12 @@ public class LocationHelper extends MainActivity implements GoogleApiClient.Conn
 
     public String getLatitude() {
         Log.e("getLatitude", "huh");
+
+        if (mGoogleApiClient.isConnecting())
+        {
+            Log.e("get lat wasnt connected", "connecting");
+
+        }
 
         if (mCurrentLocation != null) {
             latitude = String.valueOf(mCurrentLocation.getLatitude());
@@ -104,9 +113,15 @@ public class LocationHelper extends MainActivity implements GoogleApiClient.Conn
     public void onConnected(Bundle connectionHint) {
         Log.e("onConnected", "huh");
 
+
         // getting last know location on the phone - not a new location
         if (ContextCompat.checkSelfPermission(mContext, android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            Log.e("onConnected lastloc", "permission granted");
             mLastLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
+        }
+        if (mLastLocation != null) {
+            latitude = (String.valueOf(mLastLocation.getLatitude()));
+            longitude = (String.valueOf(mLastLocation.getLongitude()));
         }
         //Log.e("getLatitude con", String.valueOf(mLastLocation.getLatitude()));
         // Google (2016) Receiving Location Updates: Request Location Updates [online]
@@ -148,8 +163,8 @@ public class LocationHelper extends MainActivity implements GoogleApiClient.Conn
         // Google (2016) Changing Location Settings: Set Up a Location Request [online]
         // Mountain View, California: Google. Available from
         // https://developer.android.com/training/location/change-location-settings.html [Accessed 23 November 2016].
-        mLocationRequest.setInterval(1000);
-        mLocationRequest.setFastestInterval(500);
+        mLocationRequest.setInterval(10000);
+        mLocationRequest.setFastestInterval(5000);
         mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
     }
 
@@ -165,6 +180,7 @@ public class LocationHelper extends MainActivity implements GoogleApiClient.Conn
             // https://developer.android.com/training/location/change-location-settings.html [Accessed 23 November 2016].
             LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder()
                     .addLocationRequest(mLocationRequest);
+
             // Check whether current location settings are satisfied
             PendingResult<LocationSettingsResult> result =
                     LocationServices.SettingsApi.checkLocationSettings(mGoogleApiClient,
@@ -175,6 +191,7 @@ public class LocationHelper extends MainActivity implements GoogleApiClient.Conn
     // Google (2016) Receiving Location Updates: Define the Location Update Callback [online]
     // Mountain View, California: Google. Available from
     // https://developer.android.com/training/location/receive-location-updates.html [Accessed 23 November 2016].
+    @Override
     public void onLocationChanged(Location location) {
         Log.e("onLocationChanged", "huh");
         mCurrentLocation = location;
@@ -220,7 +237,8 @@ public class LocationHelper extends MainActivity implements GoogleApiClient.Conn
         Log.e("stopLocationUpdates", "huh");
 
         if (mGoogleApiClient.isConnected()) {
-            LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
+            //LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
+            mGoogleApiClient.disconnect();
         }
     }
 
@@ -229,6 +247,9 @@ public class LocationHelper extends MainActivity implements GoogleApiClient.Conn
         super.onResume();
         if (mGoogleApiClient.isConnected() && !mRequestingLocationUpdates) {
             startLocationUpdates();
+        }
+        else if (!mGoogleApiClient.isConnected()){
+            mGoogleApiClient.connect();
         }
     }
 
