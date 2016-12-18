@@ -25,9 +25,9 @@
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Track a Run"
-        android:id="@+id/trackRun"
-        android:onClick="configureTrack"
+        android:text="Check Weather"
+        android:id="@+id/checkWeather"
+        android:onClick="configureWeather"
         android:layout_marginTop="10dp"
         android:layout_below="@id/planRoute"
         android:layout_alignParentStart="true" />
@@ -38,7 +38,7 @@
         android:text="My Routes"
         android:id="@+id/myRoutes"
         android:layout_marginTop="10dp"
-        android:layout_below="@id/trackRun"
+        android:layout_below="@id/checkWeather"
         android:layout_alignParentStart="true"
         android:onClick="showRoutes" />
 

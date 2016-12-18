@@ -3,6 +3,8 @@ package jmidds17.runningbuddy;
 import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.ContentValues;
+import android.content.Context;
+import android.content.Intent;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.BitmapFactory;
 import android.location.Location;
@@ -14,6 +16,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Toast;
 
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationListener;
@@ -62,6 +65,7 @@ public class PlanRoute2 extends Activity implements OnMapReadyCallback {
         mLoc = new LocationHelper(PlanRoute2.this);
 
 
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_plan_route);
 
@@ -81,6 +85,11 @@ public class PlanRoute2 extends Activity implements OnMapReadyCallback {
     protected void onStop() {
         mLoc.mGoogleApiClient.disconnect();
         super.onStop();
+    }
+
+    protected void onPause() {
+        super.onPause();
+        Log.e("TAG", "onPause");
     }
 
 
@@ -124,34 +133,52 @@ public class PlanRoute2 extends Activity implements OnMapReadyCallback {
 
     // Saves the current markers as a route to a database and takes the user to SavedRoutes activity.
     public void saveRoute(View view) {
-        // Temporary string to hold the marker lat/long coordinates - will hold cords for every marker on a new line for easier parsing later.
-        // Defaulted to hold the user's current position.
-        String tempLatLong = String.valueOf(latitude) + "," + String.valueOf(longitude) + "\n";
-        // String to hold the default name of each route, will be configurable by user later
-        String tempRouteName;
-
-        DatabaseHelper mDbHelper = new DatabaseHelper(getBaseContext());
-        // Gets the data repository in write mode
-        SQLiteDatabase db = mDbHelper.getWritableDatabase();
-        // Sets the tempRouteName that will be used to write a default route name when the user adds a route.
-        // This name will be number of records + 1. User can configure their own name later if they want.
-        tempRouteName = "Route " + String.valueOf(DatabaseHelper.getNumRecords(db, DatabaseContract.SavedRoutesTable.TABLE_NAME) + 1);
-
-        // Create a new map of values, where column names are the keys
-        ContentValues values = new ContentValues();
-        values.put(DatabaseContract.SavedRoutesTable.COLUMN_NAME_1, tempRouteName);
-        for (int i = 0; i < wayPoints.size(); i++) {
-            tempLatLong = tempLatLong + String.valueOf(wayPoints.get(i).getPosition().latitude) + "," + String.valueOf(wayPoints.get(i).getPosition().longitude + "\n");
+        // If the user hasn't added any waypoints then it won't save
+        if (wayPoints.size() == 0)
+        {
+            // Show toast message that there is no waypoints to save
+            Context context = getApplicationContext();
+            CharSequence text = "You need at least one Way Point to save a route!";
+            int duration = Toast.LENGTH_LONG;
+            Toast toast = Toast.makeText(context, text, duration);
+            toast.show();
         }
-        values.put(DatabaseContract.SavedRoutesTable.COLUMN_NAME_2, tempLatLong);
-        values.put(DatabaseContract.SavedRoutesTable.COLUMN_NAME_3, String.valueOf(calculateDistance(wayPoints)));
+        // Else save waypoints
+        else {
+            // Temporary string to hold the marker lat/long coordinates - will hold cords for every marker on a new line for easier parsing later.
+            // Defaulted to hold the user's current position.
+            String tempLatLong = String.valueOf(latitude) + "," + String.valueOf(longitude) + "\n";
+            // String to hold the default name of each route, will be configurable by user later
+            String tempRouteName;
+
+            DatabaseHelper mDbHelper = new DatabaseHelper(getBaseContext());
+            // Gets the data repository in write mode
+            SQLiteDatabase db = mDbHelper.getWritableDatabase();
+            // Sets the tempRouteName that will be used to write a default route name when the user adds a route.
+            // This name will be number of records + 1. User can configure their own name later if they want.
+            tempRouteName = "Route " + String.valueOf(DatabaseHelper.getNumRecords(db, DatabaseContract.SavedRoutesTable.TABLE_NAME) + 1);
+
+            // Create a new map of values, where column names are the keys
+            ContentValues values = new ContentValues();
+            values.put(DatabaseContract.SavedRoutesTable.COLUMN_NAME_1, tempRouteName);
+            for (int i = 0; i < wayPoints.size(); i++) {
+                tempLatLong = tempLatLong + String.valueOf(wayPoints.get(i).getPosition().latitude) + "," + String.valueOf(wayPoints.get(i).getPosition().longitude + "\n");
+            }
+            values.put(DatabaseContract.SavedRoutesTable.COLUMN_NAME_2, tempLatLong);
+            values.put(DatabaseContract.SavedRoutesTable.COLUMN_NAME_3, String.valueOf(calculateDistance(wayPoints)));
 
 
-        // Insert the new row, returning the primary key value of the new row
-        long newRowId = db.insert(DatabaseContract.SavedRoutesTable.TABLE_NAME, null, values);
+            // Insert the new row, returning the primary key value of the new row
+            long newRowId = db.insert(DatabaseContract.SavedRoutesTable.TABLE_NAME, null, values);
 
-        mDbHelper.close();
-        db.close();
+            mDbHelper.close();
+            db.close();
+
+            // Finally start the intent to go to SavedRoutes activity
+            Intent intent = new Intent(this, SavedRoutes.class);
+            //start Activity
+            startActivity(intent);
+        }
     }
 
 
@@ -161,10 +188,12 @@ public class PlanRoute2 extends Activity implements OnMapReadyCallback {
         Log.e("TAG", "onResume ");
         super.onResume();
 
-
-
-        // Getting new location coordinates (before configuring map with these coordinates)
-
+        //markerCount = 1; // resets marker count
+        //wayPoints.clear(); // clears the listarray of waypoints
+        // customMap.clear(); // removes all custom markers from map
+        //plannedRoute = new PolylineOptions(); // Clears the polyline route on reset
+        // updateUI(); // replaces currentlocation origin marker on map
+        //removeLastMarker();
 
         if (latitude != null)
         {
@@ -175,12 +204,13 @@ public class PlanRoute2 extends Activity implements OnMapReadyCallback {
             Log.e("onResume planroute2", "latitude null");
         }
 
+        // Getting new location coordinates (before configuring map with these coordinates)
         new AsyncTaskGetLocation().execute();
 
     }
 
     // Resets the map
-    public void removeLastMarker(View view){
+    public void removeLastMarker(){
         markerCount = 1; // resets marker count
         wayPoints.clear(); // clears the listarray of waypoints
         customMap.clear(); // removes all custom markers from map
@@ -248,13 +278,12 @@ public class PlanRoute2 extends Activity implements OnMapReadyCallback {
                 markerCount++;
             }
         });
-
-        configureMapDefault();
     }
 
     // Controls what the user first sees on the map (default location, zoom, markers)
     private void configureMapDefault() {
         customMap.clear(); // Clears current marker before adding an updated one
+        Log.e("TAG", latitude);
         if (latitude != null) {
             // Google (2016) CameraUpdateFactory [online]
             // Mountain View, California: Google. Available from
@@ -262,13 +291,6 @@ public class PlanRoute2 extends Activity implements OnMapReadyCallback {
             customMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(Double.parseDouble(latitude), Double.parseDouble(longitude)), 15) );
             currentLocMarker = customMap.addMarker(new MarkerOptions()
                     .position(new LatLng(Double.parseDouble(latitude), Double.parseDouble(longitude)))
-                    .title("You are here"));
-            plannedRoute.add(new LatLng(Double.parseDouble(latitude),Double.parseDouble(longitude)));
-        }
-        else if (latitude != null) {
-            customMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(Double.parseDouble(latitude),Double.parseDouble(longitude)), 15));
-            currentLocMarker = customMap.addMarker(new MarkerOptions()
-                    .position(new LatLng(Double.parseDouble(latitude),Double.parseDouble(longitude)))
                     .title("You are here"));
             plannedRoute.add(new LatLng(Double.parseDouble(latitude),Double.parseDouble(longitude)));
         } else {
@@ -335,7 +357,7 @@ public class PlanRoute2 extends Activity implements OnMapReadyCallback {
 
                 while (mLoc.mGoogleApiClient.isConnecting())
                 {
-                    Log.e("doInBackground ", "its connecting");
+                    // Log.e("doInBackground ", "its connecting");
                     publishProgress();
                     if (mLoc.mGoogleApiClient.isConnected())
                     {
@@ -383,6 +405,7 @@ public class PlanRoute2 extends Activity implements OnMapReadyCallback {
                 Log.e("onPostExecute", latitude);
             }
 
+            // Configure the map
             configureMapDefault();
             pd.dismiss();
         }

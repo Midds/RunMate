@@ -94,7 +94,7 @@ public class MainActivity extends Activity {
         startActivity(intent);
     }
 
-    public void configureTrack() {
+    public void configureWeather(View view) {
         // create an intent to start TrackRun
         //Intent intent = new Intent(this, TrackRun.class);
         // start Activity
