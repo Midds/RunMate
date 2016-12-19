@@ -75,9 +75,19 @@ public class RunARoute extends Activity implements OnMapReadyCallback {
         // Getting a handle to the fragment where the map is located
         getMapFragmentHandle();
 
+        // Getting the extra data sent when this activity was called from SavedRoutes
+        Intent intent = getIntent();
+        Route routeToLoad = intent.getExtras().getParcelable("route");
+        if (routeToLoad != null ){
+            Log.e("Here is the route", routeToLoad.name);
+            loadRoute();
+        }
     }
 
+    // Putting the route gotten from the previous activity on the map
+    public void loadRoute(){
 
+    }
 
     protected void onStart() {
         mLoc.mGoogleApiClient.connect();

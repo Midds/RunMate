@@ -200,55 +200,6 @@ public class SavedRoutes extends Activity {
         ListView lv1 = (ListView)findViewById(R.id.routesListView);
     }
 
-    // Class that implements a Route as an object to hold the data pulled from the database
-    // Implements parcelable - this lets a Route object get passed between activities (needed for the run button)
-    // In order to implement Parcelable i have adapted code from the google developer documentation here.
-    // Google (2016) Parcelable [online]
-    // Mountain View, California: Google. Available from
-    // https://developer.android.com/reference/android/os/Parcelable.html [Accessed 18 December 2016].
-    public class Route implements Parcelable {
-        public Integer id;
-        public String name;
-        public String length;
-        public String waypoints;
-
-        public Route(Integer id, String name, String length, String waypoints) {
-            this.id = id;
-            this.name = name;
-            this.length = length;
-            this.waypoints = waypoints;
-        }
-
-        public int describeContents() {
-            return 0;
-        }
-
-        public void writeToParcel(Parcel out, int flags) {
-            out.writeInt(id);
-            out.writeString(name);
-            out.writeString(length);
-            out.writeString(waypoints);
-        }
-
-        public final Parcelable.Creator<Route> CREATOR
-                = new Parcelable.Creator<Route>() {
-            public Route createFromParcel(Parcel in) {
-                return new Route(in);
-            }
-
-            public Route[] newArray(int size) {
-                return new Route[size];
-            }
-        };
-
-        private Route(Parcel in) {
-            id = in.readInt();
-            name = in.readString();
-            length = in.readString();
-            waypoints = in.readString();
-        }
-    }
-
     public void removeRoute(Route route){
         // Removing the selected route from the list view
         adapter.remove(route);
@@ -350,5 +301,7 @@ public class SavedRoutes extends Activity {
         db.close();
     }
 }
+
+
 
 
