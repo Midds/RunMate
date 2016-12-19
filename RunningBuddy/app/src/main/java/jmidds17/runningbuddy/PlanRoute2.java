@@ -64,17 +64,12 @@ public class PlanRoute2 extends Activity implements OnMapReadyCallback {
         // creating instance of locationhelper.
         mLoc = new LocationHelper(PlanRoute2.this);
 
-
-
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_plan_route);
 
 
         // Getting a handle to the fragment where the map is located
         getMapFragmentHandle();
-
-
-
     }
 
     protected void onStart() {
@@ -101,6 +96,8 @@ public class PlanRoute2 extends Activity implements OnMapReadyCallback {
 
         configureMapDefault();
     }
+
+
 
     // Using Location.distanceBetween to calculate the run distance. Retruns in kilometers.
     // Google (2016) Location [online]

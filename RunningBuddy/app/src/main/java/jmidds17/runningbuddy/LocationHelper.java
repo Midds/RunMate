@@ -10,6 +10,7 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.widget.Button;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -30,7 +31,7 @@ import com.google.android.gms.maps.model.Marker;
  * function to their full extent. Therefore having this locationHelper class saves a lot of code from
  * being repeated in the other activities.
  */
-public class LocationHelper extends MainActivity implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, LocationListener {
+public class LocationHelper extends Activity implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, LocationListener {
     //global variables needed for google play services
     public GoogleApiClient mGoogleApiClient;
     public Location mLastLocation;
@@ -41,6 +42,7 @@ public class LocationHelper extends MainActivity implements GoogleApiClient.Conn
     private String longitude;
     private Context mContext;
     static public boolean upToDate = false;
+    Activity calleractivity;
 
     public LocationHelper(Context context) {
         Log.e("LocationHelper", "huh");
@@ -197,6 +199,31 @@ public class LocationHelper extends MainActivity implements GoogleApiClient.Conn
         mCurrentLocation = location;
         latitude = String.valueOf(mCurrentLocation.getLatitude());
         longitude = String.valueOf(mCurrentLocation.getLongitude());
+
+        // When location changes, finds out what activity LocationHelper was called from by checking
+        // mContext. Can then call different methods in the parent class using the switch statement.
+        String parentActivity = mContext.getClass().getSimpleName();
+        switch (parentActivity){
+            case "MainActivity": Log.e("switch statement", "its mainactivity");
+                break;
+            case "PlanRoute2": Log.e("switch statement", "its planroute2");
+                break;
+            case "TrackRun": TrackRun.getUpdates();
+                break;
+            default: Log.e("switch statement", "its default ");
+                break;
+        }
+
+
+
+    }
+
+    public LocationHelper(Context context, Activity calleractivity) {
+        this.mContext = context;
+    }
+
+    public void Update(){
+
     }
 
     protected void startLocationUpdates() {

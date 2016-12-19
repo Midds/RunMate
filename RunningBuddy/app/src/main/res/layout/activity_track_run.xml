@@ -9,7 +9,7 @@
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Start Run!"
+        android:text="Start Run"
         android:id="@+id/startRunButton"
         android:onClick="startRunTimer"
         android:layout_alignParentBottom="true"
@@ -25,6 +25,35 @@
         android:layout_width="match_parent"
         android:layout_height="fill_parent"
         android:layout_above="@+id/startRunButton"
+        android:layout_below="@+id/chronometer"
         android:layout_alignParentEnd="true" />
+
+    <Chronometer
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/chronometer"
+        android:layout_alignParentTop="true"
+        android:layout_centerInParent="true"/>
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Stop Run"
+        android:id="@+id/finishRunButton"
+        android:onClick="finishRunTimer"
+        android:layout_alignParentBottom="true"
+        android:enabled="false"
+        android:layout_toEndOf="@+id/startRunButton" />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Save this Run"
+        android:id="@+id/saveRunButton"
+        android:layout_alignParentBottom="true"
+        android:layout_alignEnd="@+id/trackMap"
+        android:enabled="false"
+        android:onClick="saveRoute" />
+
 
 </RelativeLayout>

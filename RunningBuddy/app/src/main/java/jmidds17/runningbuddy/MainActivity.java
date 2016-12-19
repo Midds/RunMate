@@ -71,15 +71,10 @@ public class MainActivity extends Activity {
     }
 
     // called when user touches the Plan Route button
-    public void startRoutePlan(View view) {
-        // intent to start PlanRoute
-        Intent intent = new Intent(this, PlanRoute.class);
-        // start Activity
-        startActivity(intent);
-    }
-
-    // called when user touches the Plan Route button
     public void startRoutePlan2(View view) {
+        // Stopping tacking of location from this activity before starting another.
+        mLoc.stopLocationUpdates();
+
         // intent to start PlanRoute
         Intent intent = new Intent(this, PlanRoute2.class);
         // start Activity
@@ -88,11 +83,25 @@ public class MainActivity extends Activity {
 
     // called when user touches the Saved routes button
     public void showRoutes(View view) {
+        // Stopping tacking of location from this activity before starting another.
+        mLoc.stopLocationUpdates();
         //  intent to start SavedRoutes
         Intent intent = new Intent(this, SavedRoutes.class);
         // start Activity
         startActivity(intent);
     }
+
+    // called when user touches the Saved routes button
+    public void startTrackRun(View view) {
+        // Stopping tacking of location from this activity before starting another.
+        mLoc.stopLocationUpdates();
+        //  intent to start SavedRoutes
+        Intent intent = new Intent(this, TrackRun.class);
+        // start Activity
+        startActivity(intent);
+    }
+
+
 
     public void configureWeather(View view) {
         // create an intent to start TrackRun
