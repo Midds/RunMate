@@ -54,9 +54,11 @@ public class RunARoute extends Activity implements OnMapReadyCallback {
     long startTime = 0;
     long stopTime = 0;
     long timePassed = 0;
+    Route routeToLoad;
     //String mLastUpdateTime = DateFormat.getDateTimeInstance().format(new Date());
     static int markerCount = 1;
     static PolylineOptions plannedRoute = new PolylineOptions();
+    static PolylineOptions activeRoute = new PolylineOptions();
     static Polyline polyline;
     static List<Marker> wayPoints = new ArrayList<Marker>();
 
@@ -77,15 +79,44 @@ public class RunARoute extends Activity implements OnMapReadyCallback {
 
         // Getting the extra data sent when this activity was called from SavedRoutes
         Intent intent = getIntent();
-        Route routeToLoad = intent.getExtras().getParcelable("route");
+        routeToLoad = intent.getExtras().getParcelable("route");
         if (routeToLoad != null ){
-            Log.e("Here is the route", routeToLoad.name);
-            loadRoute();
+            Log.e("Here is the route", routeToLoad.waypoints);
         }
     }
 
     // Putting the route gotten from the previous activity on the map
-    public void loadRoute(){
+    public void loadRoute(Route route){
+
+        // Resetting plannedRoute before loading more points to the route
+        plannedRoute = new PolylineOptions();
+
+        // Creating a streing array to split the route waypoints line by line. (One location coords per line)
+        String lines[] = route.waypoints.split("\\r?\\n");
+
+        // Loop through the string array that holds each waypoint
+        // Each string in the array needs to be split again into lat/long (it's stored divided by a comma)
+        for (int i = 0; i < lines.length; i++){
+            // Once lines [i] has been split - lat will be tempLatLong [i] and long will be tempLatLong[i+1]
+            String tempLatLong[] = lines[i].split("\\r?,");
+
+            Marker wayPointM = customMap.addMarker(new MarkerOptions()
+                    .position(new LatLng(Double.parseDouble(tempLatLong[0]), Double.parseDouble(tempLatLong[1])))
+                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE))
+                    .visible(false));
+
+            // adding points to the polyline where the new marker is
+            plannedRoute.add(new LatLng(Double.parseDouble(tempLatLong[0]), Double.parseDouble(tempLatLong[1])))
+                    .width(5);
+
+            // adding the polyline to the map
+            polyline = customMap.addPolyline(plannedRoute);
+
+            // updating waypoints (adding marker to list of markers)
+            wayPoints.add(wayPointM);
+
+            markerCount++;
+        }
 
     }
 
@@ -101,6 +132,7 @@ public class RunARoute extends Activity implements OnMapReadyCallback {
 
     protected void onPause() {
         super.onPause();
+        customMap.clear();
         Log.e("TAG", "onPause");
         //configureMapDefault();
     }
@@ -264,7 +296,6 @@ public class RunARoute extends Activity implements OnMapReadyCallback {
 
         // Getting new location coordinates (before configuring map with these coordinates)
         new AsyncTaskGetLocation().execute();
-
     }
 
 
@@ -413,6 +444,7 @@ public class RunARoute extends Activity implements OnMapReadyCallback {
         protected void onPreExecute() {
             Log.e("onPreExecute", "huh");
             pd=ProgressDialog.show(RunARoute.this,"","Please Wait",false);
+
         }
 
         @Override
@@ -477,6 +509,7 @@ public class RunARoute extends Activity implements OnMapReadyCallback {
 
             // Configure the map
             configureMapDefault();
+            loadRoute(routeToLoad);
             pd.dismiss();
         }
     }
