@@ -82,9 +82,13 @@ public class PlanRoute2 extends Activity implements OnMapReadyCallback {
         super.onStop();
     }
 
+    @Override
     protected void onPause() {
         super.onPause();
-        Log.e("TAG", "onPause");
+        // stop location updates when activity will go out of focus
+        if (mLoc.mGoogleApiClient.isConnected()){
+            mLoc.stopLocationUpdates();
+        }
     }
 
 

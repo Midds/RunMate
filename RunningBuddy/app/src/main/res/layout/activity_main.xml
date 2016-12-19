@@ -34,7 +34,6 @@
         android:layout_marginBottom="20dp"
         android:layout_alignParentStart="true"
         android:layout_alignParentBottom="true"
-        android:backgroundTint="#ffff0000"
         android:id="@+id/weatherWidget">
 
 
@@ -64,17 +63,16 @@
             android:textAppearance="?android:attr/textAppearanceMedium"
             android:text="Wind Conditions"
             android:id="@+id/weatherWind"
-            android:layout_above="@+id/weatherDescription"
+            android:layout_below="@+id/weatherDescription"
             android:layout_alignEnd="@+id/weatherLocation" />
 
         <TextView
-            android:layout_marginStart="10dp"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textAppearance="?android:attr/textAppearanceMedium"
             android:text="Description"
             android:id="@+id/weatherDescription"
-            android:layout_alignBottom="@+id/weatherLocation"
+            android:layout_alignBottom="@+id/weatherTemperature"
             android:layout_alignParentStart="true" />
 
         <ImageView

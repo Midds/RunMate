@@ -70,6 +70,15 @@ public class MainActivity extends Activity {
 
     }
 
+    @Override
+    public void onPause() {
+        super.onPause();
+        // stop location updates when activity will go out of focus
+        if (mLoc.mGoogleApiClient.isConnected()){
+            mLoc.stopLocationUpdates();
+        }
+    }
+
     // called when user touches the Plan Route button
     public void startRoutePlan2(View view) {
         // Stopping tacking of location from this activity before starting another.

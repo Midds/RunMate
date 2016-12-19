@@ -89,10 +89,13 @@ public class TrackRun extends Activity implements OnMapReadyCallback {
         super.onStop();
     }
 
-    protected void onPause() {
+    @Override
+    public void onPause() {
         super.onPause();
-        Log.e("TAG", "onPause");
-        //configureMapDefault();
+        // stop location updates when activity will go out of focus
+        if (mLoc.mGoogleApiClient.isConnected()){
+            mLoc.stopLocationUpdates();
+        }
     }
 
     // This method will be called when onLocationChanged is called in LocationHelper class.

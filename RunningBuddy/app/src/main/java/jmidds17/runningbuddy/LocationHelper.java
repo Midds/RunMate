@@ -210,6 +210,8 @@ public class LocationHelper extends Activity implements GoogleApiClient.Connecti
                 break;
             case "TrackRun": TrackRun.getUpdates();
                 break;
+            case "RunARoute": RunARoute.getUpdates();
+                break;
             default: Log.e("switch statement", "its default ");
                 break;
         }
