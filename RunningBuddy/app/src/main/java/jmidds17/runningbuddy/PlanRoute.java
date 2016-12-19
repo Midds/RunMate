@@ -302,7 +302,7 @@ public class PlanRoute extends Activity implements GoogleApiClient.ConnectionCal
         String tempLatLong = "";
         String tempRouteName;
 
-        DatabaseHelper mDbHelper = new DatabaseHelper(getBaseContext());
+        DatabaseHelper mDbHelper = DatabaseHelper.getInstance(this);
         // Gets the data repository in write mode
         SQLiteDatabase db = mDbHelper.getWritableDatabase();
         // Sets the tempRouteName that will be used to write a default route name when the user adds a route.
@@ -322,7 +322,7 @@ public class PlanRoute extends Activity implements GoogleApiClient.ConnectionCal
         // Insert the new row, returning the primary key value of the new row
         long newRowId = db.insert(DatabaseContract.SavedRoutesTable.TABLE_NAME, null, values);
 
-        mDbHelper.close();
+
         db.close();
 
 

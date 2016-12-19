@@ -42,7 +42,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
-public class TrackRun extends Activity implements OnMapReadyCallback {
+public class RunARoute extends Activity implements OnMapReadyCallback {
     //Global Variables
     static LocationHelper mLoc;
     static boolean timer = false;
@@ -67,10 +67,10 @@ public class TrackRun extends Activity implements OnMapReadyCallback {
     protected void onCreate(Bundle savedInstanceState) {
         Log.e("onCreate", "huh");
         // creating instance of locationhelper.
-        mLoc = new LocationHelper(TrackRun.this);
+        mLoc = new LocationHelper(RunARoute.this);
 
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_track_run);
+        setContentView(R.layout.activity_run_a_route);
 
         // Getting a handle to the fragment where the map is located
         getMapFragmentHandle();
@@ -219,7 +219,7 @@ public class TrackRun extends Activity implements OnMapReadyCallback {
             // Insert the new row, returning the primary key value of the new row
             long newRowId = db.insert(DatabaseContract.SavedRoutesTable.TABLE_NAME, null, values);
 
-
+            mDbHelper.close();
             db.close();
 
             // Finally start the intent to go to SavedRoutes activity
@@ -402,7 +402,7 @@ public class TrackRun extends Activity implements OnMapReadyCallback {
         @Override
         protected void onPreExecute() {
             Log.e("onPreExecute", "huh");
-            pd=ProgressDialog.show(TrackRun.this,"","Please Wait",false);
+            pd=ProgressDialog.show(RunARoute.this,"","Please Wait",false);
         }
 
         @Override
@@ -478,7 +478,7 @@ public class TrackRun extends Activity implements OnMapReadyCallback {
         @Override
         protected void onPreExecute() {
             Log.e("onPreExecute", "huh");
-            pd=ProgressDialog.show(TrackRun.this,"","Please Wait",false);
+            pd=ProgressDialog.show(RunARoute.this,"","Please Wait",false);
         }
 
         @Override

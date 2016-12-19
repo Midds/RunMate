@@ -148,7 +148,8 @@ public class PlanRoute2 extends Activity implements OnMapReadyCallback {
             // String to hold the default name of each route, will be configurable by user later
             String tempRouteName;
 
-            DatabaseHelper mDbHelper = new DatabaseHelper(getBaseContext());
+            //DatabaseHelper mDbHelper = new DatabaseHelper(getBaseContext());
+            DatabaseHelper mDbHelper = DatabaseHelper.getInstance(this);
             // Gets the data repository in write mode
             SQLiteDatabase db = mDbHelper.getWritableDatabase();
             // Sets the tempRouteName that will be used to write a default route name when the user adds a route.
@@ -168,7 +169,7 @@ public class PlanRoute2 extends Activity implements OnMapReadyCallback {
             // Insert the new row, returning the primary key value of the new row
             long newRowId = db.insert(DatabaseContract.SavedRoutesTable.TABLE_NAME, null, values);
 
-            mDbHelper.close();
+
             db.close();
 
             // Finally start the intent to go to SavedRoutes activity

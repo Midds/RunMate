@@ -7,4 +7,5 @@
     <string name="title_activity_saved_routes">SavedRoutes</string>
     <string name="title_activity_track_run">TrackRun</string>
     <string name="title_activity_plan_route2">PlanRoute2</string>
+    <string name="title_activity_run_aroute">RunARoute</string>
 </resources>

@@ -6,9 +6,10 @@ import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
-import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Parcel;
+import android.os.Parcelable;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -20,19 +21,15 @@ import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
 
-import com.google.android.gms.maps.model.BitmapDescriptorFactory;
-import com.google.android.gms.maps.model.Marker;
-import com.google.android.gms.maps.model.MarkerOptions;
 
-import org.json.JSONObject;
-
-import java.io.InputStream;
-import java.net.URL;
 import java.util.ArrayList;
-import java.util.List;
+
+import javax.security.auth.login.LoginException;
+
 
 public class SavedRoutes extends Activity {
-    DatabaseHelper mDbHelper = new DatabaseHelper(this);
+    DatabaseHelper mDbHelper = DatabaseHelper.getInstance(this);
+
     Cursor c;
     SQLiteDatabase db;
 
@@ -47,6 +44,12 @@ public class SavedRoutes extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_saved_routes);
 
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+
         // Construct the data source
         arrayOfRoutes = new ArrayList<Route>();
         // Create the adapter to convert the array to views
@@ -54,10 +57,9 @@ public class SavedRoutes extends Activity {
         // Attach the adapter to a ListView
         listView = (ListView) findViewById(R.id.routesListView);
 
+        // Call async class which will then open the database
         new AsyncTaskGetSavedData().execute();
-
     }
-
 
     public void planNewRoute(View view) {
         //create an intent to start PlanRoute activity
@@ -182,33 +184,68 @@ public class SavedRoutes extends Activity {
 
 
         if(c != null && c.moveToFirst()) {
-            Log.e("in c!= null", "in the if");
             do {
                 // Add item to adapter
                 Route newRoute = new Route(
                         c.getInt(c.getColumnIndex("_id")),
                         c.getString(c.getColumnIndex("RunName")) + "\n",
-                        c.getString(c.getColumnIndex("RunDistance")));
+                        c.getString(c.getColumnIndex("RunDistance")),
+                        c.getString(c.getColumnIndex("RunWaypoints")));
                 adapter.add(newRoute);
 
             } while (c.moveToNext());
         }
 
-
-
         listView.setAdapter(adapter);
         ListView lv1 = (ListView)findViewById(R.id.routesListView);
     }
 
-    public class Route {
+    // Class that implements a Route as an object to hold the data pulled from the database
+    // Implements parcelable - this lets a Route object get passed between activities (needed for the run button)
+    // In order to implement Parcelable i have adapted code from the google developer documentation here.
+    // Google (2016) Parcelable [online]
+    // Mountain View, California: Google. Available from
+    // https://developer.android.com/reference/android/os/Parcelable.html [Accessed 18 December 2016].
+    public class Route implements Parcelable {
         public Integer id;
         public String name;
         public String length;
+        public String waypoints;
 
-        public Route(Integer id, String name, String length) {
+        public Route(Integer id, String name, String length, String waypoints) {
             this.id = id;
             this.name = name;
             this.length = length;
+            this.waypoints = waypoints;
+        }
+
+        public int describeContents() {
+            return 0;
+        }
+
+        public void writeToParcel(Parcel out, int flags) {
+            out.writeInt(id);
+            out.writeString(name);
+            out.writeString(length);
+            out.writeString(waypoints);
+        }
+
+        public final Parcelable.Creator<Route> CREATOR
+                = new Parcelable.Creator<Route>() {
+            public Route createFromParcel(Parcel in) {
+                return new Route(in);
+            }
+
+            public Route[] newArray(int size) {
+                return new Route[size];
+            }
+        };
+
+        private Route(Parcel in) {
+            id = in.readInt();
+            name = in.readString();
+            length = in.readString();
+            waypoints = in.readString();
         }
     }
 
@@ -232,7 +269,17 @@ public class SavedRoutes extends Activity {
         checkRoutesExist();
     }
 
+    public void loadRoute(Route route){
+        //create an intent to start RunARoute activity
+        Intent intent = new Intent(this, RunARoute.class);
+        // pass the route that the use just clicked on to the new activity
+        intent.putExtra("route", route);
+        //start Activity
+        startActivity(intent);
+    }
+
     // RoutesAdapter is used to bind routes to the listview, this was adapted from a tutorial by CodePath.
+    // Need a custom adapter rather than the provided simple default ones so i can add buttons to each item.
     // CodePath (2016) Using an ArrayAdapter with ListView [online]
     // San Francisco, California: CodePath. Available from
     // https://github.com/codepath/android_guides/wiki/Using-an-ArrayAdapter-with-ListView [Accessed 17 December 2016].
@@ -250,33 +297,57 @@ public class SavedRoutes extends Activity {
                 convertView = LayoutInflater.from(getContext()).inflate(R.layout.item_route, parent, false);
             }
             // Lookup view for data population
-            TextView tvName = (TextView) convertView.findViewById(R.id.tvName);
-            TextView tvHome = (TextView) convertView.findViewById(R.id.tvLength);
+            TextView tv1 = (TextView) convertView.findViewById(R.id.tvName);
+            TextView tv2 = (TextView) convertView.findViewById(R.id.tvLength);
             // Populate the data into the template view using the data object
-            tvName.setText(route.name);
-            tvHome.setText(route.length);
+            tv1.setText(route.name);
+            tv2.setText(route.length);
 
 
-            // Lookup view for data population
-            Button btButton = (Button) convertView.findViewById(R.id.deleteButton);
-            // Cache row position inside the button using `setTag`
-            btButton.setTag(position);
+            // Find button
+            Button deleteButton = (Button) convertView.findViewById(R.id.deleteButton);
+            // Cache row position for the button using `setTag`
+            deleteButton.setTag(position);
             // Attach the click event handler
-            btButton.setOnClickListener(new View.OnClickListener() {
+            deleteButton.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
                     int position = (Integer) view.getTag();
                     // Access the row position here to get the correct data item
                     Route route = getItem(position);
-                    // Do what you want here...
-                    Log.e("TAG", String.valueOf(route.id));
+                    // Call removeRoute method
                     removeRoute(route);
+                }
+            });
+
+            // Lookup view for data population
+            Button runButton = (Button) convertView.findViewById(R.id.runButton);
+            // Cache row position inside the button using `setTag`
+            runButton.setTag(position);
+            // Attach the click event handler
+            runButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    int position = (Integer) view.getTag();
+                    // Access the row position here to get the correct data item
+                    Route route = getItem(position);
+                    // call loadRoute method, this will take the selected route and send it's data
+                    // to another activity.
+                    loadRoute(route);
                 }
             });
 
             // Return the completed view to render on screen
             return convertView;
         }
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        Log.e("onStop", "closing db");
+        // Closing the database if the activity goes out of view
+        db.close();
     }
 }
 

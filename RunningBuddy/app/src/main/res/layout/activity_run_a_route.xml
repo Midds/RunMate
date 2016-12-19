@@ -1,0 +1,59 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent"
+    android:layout_height="match_parent" android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    android:paddingBottom="@dimen/activity_vertical_margin"
+    tools:context="jmidds17.runningbuddy.TrackRun">
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Start Run"
+        android:id="@+id/startRunButton"
+        android:onClick="startRunTimer"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentStart="true" />
+
+    <fragment
+        tools:ignore="MissingPrefix"
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:map="http://schemas.android.com/apk/res-auto"
+        map:uiZoomControls="true"
+        android:name="com.google.android.gms.maps.MapFragment"
+        android:id="@+id/trackMap"
+        android:layout_width="match_parent"
+        android:layout_height="fill_parent"
+        android:layout_above="@+id/startRunButton"
+        android:layout_below="@+id/chronometer"
+        android:layout_alignParentEnd="true" />
+
+    <Chronometer
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/chronometer"
+        android:layout_alignParentTop="true"
+        android:layout_centerInParent="true"/>
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Stop Run"
+        android:id="@+id/finishRunButton"
+        android:onClick="finishRunTimer"
+        android:layout_alignParentBottom="true"
+        android:enabled="false"
+        android:layout_toEndOf="@+id/startRunButton" />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Save this Run"
+        android:id="@+id/saveRunButton"
+        android:layout_alignParentBottom="true"
+        android:layout_alignEnd="@+id/trackMap"
+        android:enabled="false"
+        android:onClick="saveRoute" />
+
+
+</RelativeLayout>

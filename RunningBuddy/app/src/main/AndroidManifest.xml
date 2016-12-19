@@ -9,9 +9,9 @@
 
     <application
         android:allowBackup="true"
-        android:screenOrientation="portrait"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
+        android:screenOrientation="portrait"
         android:theme="@style/AppTheme" >
         <activity
             android:name=".MainActivity"
@@ -60,6 +60,14 @@
         <activity
             android:name=".PlanRoute2"
             android:label="@string/title_activity_plan_route2"
+            android:parentActivityName=".MainActivity" >
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="jmidds17.runningbuddy.MainActivity" />
+        </activity>
+        <activity
+            android:name=".RunARoute"
+            android:label="@string/title_activity_run_aroute"
             android:parentActivityName=".MainActivity" >
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
