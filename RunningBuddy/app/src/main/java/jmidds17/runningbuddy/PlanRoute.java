@@ -26,6 +26,8 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -125,7 +127,7 @@ public class PlanRoute extends Activity implements OnMapReadyCallback {
         // https://stackoverflow.com/questions/17143129/add-marker-on-android-google-map-via-touch-or-tap [Accessed 27 November 2016].
         customMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
 
-            // Will run when the map is tappen on - this is used to add markers to plot a route
+            // Will run when the map is tapped on - this is used to add markers to plot a route
             @Override
             public void onMapClick(LatLng point) {
                 // Adding marker to the map
@@ -154,7 +156,6 @@ public class PlanRoute extends Activity implements OnMapReadyCallback {
     // Controls what the user first sees on the map (default location, zoom, markers)
     private void configureMapDefault() {
         customMap.clear(); // Clears current marker before adding an updated one
-        Log.e("TAG", latitude);
         if (latitude != null) {
             // Google (2016) CameraUpdateFactory [online]
             // Mountain View, California: Google. Available from
@@ -184,7 +185,7 @@ public class PlanRoute extends Activity implements OnMapReadyCallback {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_plan_route2, menu);
+        getMenuInflater().inflate(R.menu.menu_plan_route, menu);
         return true;
     }
 
@@ -245,10 +246,9 @@ public class PlanRoute extends Activity implements OnMapReadyCallback {
     // Google (2016) Location [online]
     // Mountain View, California: Google. Available from
     // https://developer.android.com/reference/android/location/Location.html [Accessed 15 December 2016].
-    public float calculateDistance(List<Marker> routeToMeasure){
+    public double calculateDistance(List<Marker> routeToMeasure){
         float distance = 0; // double to hold the final tallied distance
         float[] results = new float[routeToMeasure.size()]; // float array to hold the distances between each location
-
         // Getting distance between start point and first waypoint (because start point(current phone location) is not stored in 'wayPoints')
         Location.distanceBetween(Double.parseDouble(latitude), Double.parseDouble(longitude),
                 routeToMeasure.get(0).getPosition().latitude, routeToMeasure.get(0).getPosition().longitude,
@@ -266,7 +266,19 @@ public class PlanRoute extends Activity implements OnMapReadyCallback {
             // Adding up the distance as it iterates through the way points
             distance = distance + results[0];
         }
-        return distance;
+        return round(distance, 2);
+    }
+
+    // 'round()' method is taken directly from(below), and is used to round a double to a selected amount of decimal places.
+    // Jonik (2010) Round a double to 2 decimal places
+    // [stack overflow] 11 May. Available from
+    // https://stackoverflow.com/questions/2808535/round-a-double-to-2-decimal-places [Accessed 18 December 2016].
+    public double round(double value, int places) {
+        if (places < 0) throw new IllegalArgumentException();
+
+        BigDecimal bd = new BigDecimal(value);
+        bd = bd.setScale(places, RoundingMode.HALF_UP);
+        return bd.doubleValue();
     }
 
     public class AsyncTaskGetLocation extends AsyncTask<String, String, String> {

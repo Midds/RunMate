@@ -400,8 +400,6 @@ public class RunARoute extends Activity implements OnMapReadyCallback {
         }
     }
 
-
-
     private void getMapFragmentHandle(){
         // Google (2016) Map Objects [online]
         // Mountain View, California: Google. Available from
@@ -414,7 +412,7 @@ public class RunARoute extends Activity implements OnMapReadyCallback {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_plan_route2, menu);
+        getMenuInflater().inflate(R.menu.menu_plan_route, menu);
         return true;
     }
 
@@ -452,8 +450,6 @@ public class RunARoute extends Activity implements OnMapReadyCallback {
         protected String doInBackground(String... arg0)  {
             try {
                 Log.e("doInBackground ", "planRoute2 huh");
-
-
 
                 while (mLoc.mGoogleApiClient.isConnecting())
                 {

@@ -6,12 +6,9 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.database.sqlite.SQLiteDatabase;
-import android.graphics.BitmapFactory;
 import android.location.Location;
-import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
 import android.os.SystemClock;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
@@ -21,9 +18,6 @@ import android.widget.Button;
 import android.widget.Chronometer;
 import android.widget.Toast;
 
-import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.location.LocationListener;
-import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
@@ -35,10 +29,8 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 
-import org.json.JSONObject;
-
-import java.io.InputStream;
-import java.net.URL;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -144,7 +136,7 @@ public class TrackRun extends Activity implements OnMapReadyCallback {
         stopTime = ch1.getBase();
         timePassed = SystemClock.elapsedRealtime() - stopTime;
         Log.e("stop time = ", String.valueOf(stopTime));
-        Log.e("time passed = ", String.valueOf(timePassed));
+        Log.e("time passed = ", String.valueOf(timePassed / 1000));
         timer = false;
 
         // greying out the button once the timer has ended
@@ -165,7 +157,7 @@ public class TrackRun extends Activity implements OnMapReadyCallback {
     // Google (2016) Location [online]
     // Mountain View, California: Google. Available from
     // https://developer.android.com/reference/android/location/Location.html [Accessed 15 December 2016].
-    public float calculateDistance(List<Marker> routeToMeasure){
+    public double calculateDistance(List<Marker> routeToMeasure){
         float distance = 0; // double to hold the final tallied distance
         float[] results = new float[routeToMeasure.size()]; // float array to hold the distances between each location
 
@@ -186,9 +178,22 @@ public class TrackRun extends Activity implements OnMapReadyCallback {
             // Adding up the distance as it iterates through the way points
             distance = distance + results[0];
         }
-        return distance;
+
+        // return distance rounded to 2 decimal places
+        return round(distance, 2);
     }
 
+    // 'round()' method is taken directly from(below), and is used to round a double to a selected amount of decimal places.
+    // Jonik (2010) Round a double to 2 decimal places
+    // [stack overflow] 11 May. Available from
+    // https://stackoverflow.com/questions/2808535/round-a-double-to-2-decimal-places [Accessed 18 December 2016].
+    public double round(double value, int places) {
+        if (places < 0) throw new IllegalArgumentException();
+
+        BigDecimal bd = new BigDecimal(value);
+        bd = bd.setScale(places, RoundingMode.HALF_UP);
+        return bd.doubleValue();
+    }
 
     // Saves the current markers as a route to a database and takes the user to SavedRoutes activity.
     public void saveRoute(View view) {
@@ -256,28 +261,6 @@ public class TrackRun extends Activity implements OnMapReadyCallback {
 
     }
 
-
-    /*public void removeLastMarker(View view){
-        markerCount = markerCount - 1; // removes one marker from count
-        Log.e("TAG", String.valueOf(wayPoints.size()));
-        wayPoints.remove(wayPoints.size() - 1); // removes the last marker
-        Log.e("TAG", String.valueOf(wayPoints.size()));
-
-        for (int i = 0; i < wayPoints.size() - 1; i++){
-            tempRoute.add(wayPoints.get(i).getPosition())
-                    .width(5);
-        }
-
-        customMap.clear(); // removes all custom markers from map
-
-
-        plannedRoute = new PolylineOptions(); // Clears the polyline route on reset
-        updateUI(); // replaces currentlocation origin marker on map
-
-
-        polyline = customMap.addPolyline(tempRoute);
-    }*/
-
     static private void updateMap(){
         // Adding marker to the map
         // This creates a marker but so it can be saved in the wayPoints list and used later, but doesn't
@@ -324,17 +307,27 @@ public class TrackRun extends Activity implements OnMapReadyCallback {
                         .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE))
                         .visible(false));
 
-                // adding points to the polyline where the new marker is
-                plannedRoute.add(new LatLng(point.latitude, point.longitude))
-                        .width(5);
+                List<Marker> tempOnClick = new ArrayList<Marker>();
+                tempOnClick.add(wayPointM);
+                tempOnClick.add(currentLocMarker);
 
-                // adding the polyline to the map
-                polyline = customMap.addPolyline(plannedRoute);
+                // Show toast message of the distance between the point clicked and current location
+                Context context = getApplicationContext();
+                double tempDistance = calculateDistance(tempOnClick); // calling calculateDistance with the point clicked and current location
+                CharSequence message;
 
-                // updating waypoints (adding marker to list of markers)
-                wayPoints.add(wayPointM);
+                // Show a different message depending on the distance away (KM or metres)
+                if (tempDistance < 1000){
+                    message = "Point is " + String.valueOf((int) tempDistance) + " Metres away.";
+                }
+                else {
+                    // tempDistance is dived by 1000 and 'round()' is called to round the number down to 1 decimal place.
+                    message = "Point is " + String.valueOf(round(tempDistance/1000, 1)) + " KM away.";
+                }
 
-                markerCount++;
+                int duration = Toast.LENGTH_LONG;
+                Toast toast = Toast.makeText(context, message, duration);
+                toast.show();
             }
         });
     }
@@ -367,8 +360,6 @@ public class TrackRun extends Activity implements OnMapReadyCallback {
         }
     }
 
-
-
     private void getMapFragmentHandle(){
         // Google (2016) Map Objects [online]
         // Mountain View, California: Google. Available from
@@ -381,7 +372,7 @@ public class TrackRun extends Activity implements OnMapReadyCallback {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_plan_route2, menu);
+        getMenuInflater().inflate(R.menu.menu_plan_route, menu);
         return true;
     }
 
@@ -477,43 +468,6 @@ public class TrackRun extends Activity implements OnMapReadyCallback {
         }
     }
 
-    public class AsyncTaskStartTimer extends AsyncTask<String, String, String> {
-
-        ProgressDialog pd;
-
-        @Override
-        protected void onPreExecute() {
-            Log.e("onPreExecute", "huh");
-            pd=ProgressDialog.show(TrackRun.this,"","Please Wait",false);
-        }
-
-        @Override
-
-        protected String doInBackground(String... arg0)  {
-            try {
-
-
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            return null;
-        }
-
-        protected void onProgressUpdate()
-        {
-
-        }
-
-        @Override
-        // Below method will run when service HTTP request is complete, this will stop location updates
-        // from LocationHelper, as well as setting the new information to their text views.
-        protected void onPostExecute(String strFromDoInBg) {
-            Log.e("onPostExecute", "huh");
-
-            configureMapDefault();
-        }
-    }
-
     public class AsyncTaskSaveRoute extends AsyncTask<String, String, String> {
 
         ProgressDialog pd;
@@ -530,18 +484,33 @@ public class TrackRun extends Activity implements OnMapReadyCallback {
                 // Gets the data repository in write mode
                 db = mDbHelper.getWritableDatabase();
 
-                // Sets the tempRouteName that will be used to write a default route name when the user adds a route.
+                // Sets the tempRouteName that will be used as a default route name when the user adds a route.
                 // This name will be number of records + 1. User can configure their own name later if they want.
                 tempRouteName = "Route " + String.valueOf(DatabaseHelper.getNumRecords(db, DatabaseContract.SavedRoutesTable.TABLE_NAME) + 1);
 
                 // Create a new map of values, where column names are the keys
                 ContentValues values = new ContentValues();
+                // Writing the values to the database
                 values.put(DatabaseContract.SavedRoutesTable.COLUMN_NAME_1, tempRouteName);
                 values.put(DatabaseContract.SavedRoutesTable.COLUMN_NAME_2, tempLatLong);
                 values.put(DatabaseContract.SavedRoutesTable.COLUMN_NAME_3, tempDistance);
 
-                // Insert the new row, returning the primary key value of the new row
-                db.insert(DatabaseContract.SavedRoutesTable.TABLE_NAME, null, values);
+                // Insert the new row into the database, the new row's primary key is returned in newRowId
+                long newRowId = db.insert(DatabaseContract.SavedRoutesTable.TABLE_NAME, null, values);
+
+                // Another map of values
+                ContentValues values2 = new ContentValues();
+                // Writing default route data to the RouteStatisticsTable
+                // newRowId can now be used as a Foreign key for this table
+                values2.put(DatabaseContract.RouteStatisticsTable.COLUMN_NAME_1, String.valueOf(newRowId)); // route_id
+                values2.put(DatabaseContract.RouteStatisticsTable.COLUMN_NAME_2, "1"); // # times ran
+                values2.put(DatabaseContract.RouteStatisticsTable.COLUMN_NAME_3, timePassed); // best time
+                values2.put(DatabaseContract.RouteStatisticsTable.COLUMN_NAME_4, timePassed); // worst time
+                values2.put(DatabaseContract.RouteStatisticsTable.COLUMN_NAME_5, timePassed); // average time
+                // because this is the first time this run has been tracked, columns 3,4,5 will all be the same.
+
+                // Insert the new row into the database
+                db.insert(DatabaseContract.RouteStatisticsTable.TABLE_NAME, null, values2);
 
                 // Closing db connection
                 db.close();

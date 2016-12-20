@@ -109,6 +109,7 @@ public class MainActivity extends Activity {
         //startActivity(intent);
         mLoc.connectToApi();
         mLoc.startLocationUpdates();
+
         checkWeather();
     }
 
@@ -201,7 +202,7 @@ public class MainActivity extends Activity {
                     String imageurl = "http://openweathermap.org/img/w/" + weatherIcon +".png";
                     // parse the cover art image url to proper URL type
                     URL u = new URL(imageurl);
-                    // download image cover art from url and save as a bitmap
+                    // download image cover from url and save as a bitmap
                     InputStream is = u.openConnection().getInputStream();
                     bitmap = BitmapFactory.decodeStream(is);
 
@@ -310,21 +311,29 @@ public class MainActivity extends Activity {
         }
     }
 
-    // Updating the data on the weather widget's text views
+    // Updating the data on the weather widget's and making views visable
     public void setWeatherWidget() {
         TextView tv1 = (TextView)findViewById(R.id.weatherTemperature);
         tv1.setText(String.valueOf(weatherTemperature) +  (char) 0x00B0 + "C");
+        tv1.setVisibility(View.VISIBLE);
 
         TextView tv2 = (TextView)findViewById(R.id.weatherLocation);
         tv2.setText(weatherLocation);
+        tv2.setVisibility(View.VISIBLE);
 
         TextView tv3 = (TextView)findViewById(R.id.weatherDescription);
         tv3.setText(weatherDescription);
+        tv3.setVisibility(View.VISIBLE);
 
         TextView tv4 = (TextView)findViewById(R.id.weatherWind);
         tv4.setText("Wind = " + String.valueOf(weatherWind) + "mph");
+        tv4.setVisibility(View.VISIBLE);
 
         ImageView iv1 = (ImageView) findViewById(R.id.weatherIcon);
         iv1.setImageBitmap(bitmap);
+        iv1.setVisibility(View.VISIBLE);
+
+        ImageView iv2 = (ImageView)findViewById(R.id.runnerIcon);
+        iv2.setVisibility(View.INVISIBLE);
     }
 }
