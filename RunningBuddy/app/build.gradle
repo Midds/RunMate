@@ -26,8 +26,8 @@ dependencies {
     // Google (2016) Setting up Google play services [online]
     // Mountain View, California: Google. Available from
     // https://developers.google.com/android/guides/setup [Accessed 21 November 2016].
-    compile 'com.google.android.gms:play-services-maps:9.6.0'
-    compile 'com.google.android.gms:play-services-location:9.6.0'
+    compile 'com.google.android.gms:play-services-maps:9.0.2'
+    compile 'com.google.android.gms:play-services-location:9.0.2'
     compile 'com.android.volley:volley:1.0.0'
     compile 'com.android.support:appcompat-v7:23.1.1'
 

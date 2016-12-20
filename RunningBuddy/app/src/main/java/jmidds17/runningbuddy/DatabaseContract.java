@@ -48,18 +48,17 @@ public class DatabaseContract {
         public static final String COLUMN_NAME_2 = "TimesRan";
         public static final String COLUMN_NAME_3 = "BestTime";
         public static final String COLUMN_NAME_4 = "WorstTime";
-        public static final String COLUMN_NAME_5 = "AverageTime";
 
         private static final String TEXT_TYPE = " TEXT";
+        private static final String INT_TYPE = " INTEGER";
         private static final String COMMA_SEP = ",";
         public static final String SQL_CREATE_ENTRIES =
                 "CREATE TABLE " + RouteStatisticsTable.TABLE_NAME + " (" +
                         RouteStatisticsTable._ID + " INTEGER PRIMARY KEY," +
                         RouteStatisticsTable.COLUMN_NAME_1 + TEXT_TYPE + COMMA_SEP +
-                        RouteStatisticsTable.COLUMN_NAME_2 + TEXT_TYPE + COMMA_SEP +
+                        RouteStatisticsTable.COLUMN_NAME_2 + INT_TYPE + COMMA_SEP +
                         RouteStatisticsTable.COLUMN_NAME_3 + TEXT_TYPE + COMMA_SEP +
-                        RouteStatisticsTable.COLUMN_NAME_4 + TEXT_TYPE + COMMA_SEP +
-                        RouteStatisticsTable.COLUMN_NAME_5 + TEXT_TYPE + " )";
+                        RouteStatisticsTable.COLUMN_NAME_4 + TEXT_TYPE + " )";
 
         public static final String SQL_DELETE_ENTRIES =
                 "DROP TABLE IF EXISTS " + RouteStatisticsTable.TABLE_NAME;

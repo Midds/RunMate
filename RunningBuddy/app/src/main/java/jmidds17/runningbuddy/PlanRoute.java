@@ -356,8 +356,18 @@ public class PlanRoute extends Activity implements OnMapReadyCallback {
                 values.put(DatabaseContract.SavedRoutesTable.COLUMN_NAME_2, tempLatLong);
                 values.put(DatabaseContract.SavedRoutesTable.COLUMN_NAME_3, tempDistance);
 
-                // Insert the new row, returning the primary key value of the new row
-                db.insert(DatabaseContract.SavedRoutesTable.TABLE_NAME, null, values);
+                // Insert the data into the SavedRoutes table and return the new _id for this row as a long
+                long newRowId = db.insert(DatabaseContract.SavedRoutesTable.TABLE_NAME, null, values);
+
+                // newRowId can now be used as a Foreign key for this table
+                ContentValues values2 = new ContentValues();
+                values2.put(DatabaseContract.RouteStatisticsTable.COLUMN_NAME_1, String.valueOf(newRowId)); // route_id
+                values2.put(DatabaseContract.RouteStatisticsTable.COLUMN_NAME_2, 0); // # times ran
+                values2.put(DatabaseContract.RouteStatisticsTable.COLUMN_NAME_3, "0"); // best time
+                values2.put(DatabaseContract.RouteStatisticsTable.COLUMN_NAME_4, "0"); // worst time
+
+                // Insert the new row for the RouteStatisticsTable
+                db.insert(DatabaseContract.RouteStatisticsTable.TABLE_NAME, null, values2);
 
                 // Closing db connection
                 db.close();

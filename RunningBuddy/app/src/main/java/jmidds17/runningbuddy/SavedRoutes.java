@@ -162,43 +162,69 @@ public class SavedRoutes extends Activity {
         Log.e("name of column", DatabaseContract.SavedRoutesTable.COLUMN_NAME_1);
         String[] selectionArgs = { "Route 1" };
 
+
         // How you want the results sorted in the resulting Cursor
         String sortOrder =
                 DatabaseContract.SavedRoutesTable.COLUMN_NAME_2 + " DESC";
 
-        /* c = db.query(
-                DatabaseContract.SavedRoutesTable.TABLE_NAME,  // The table to query
-                projection,                               // The columns to return
-                selection,                                // The columns for the WHERE clause
-                selectionArgs,                            // The values for the WHERE clause
-                null,                                     // don't group the rows
-                null,                                     // don't filter by row groups
-                null                                 // The sort order
-        ); */
+        String rawJoinQuery = "SELECT "
+                + DatabaseContract.SavedRoutesTable.TABLE_NAME + "."
+                + DatabaseContract.SavedRoutesTable._ID + ", " // route id
+                + DatabaseContract.SavedRoutesTable.TABLE_NAME + "."
+                + DatabaseContract.SavedRoutesTable.COLUMN_NAME_1 + ", " // route name
+                + DatabaseContract.SavedRoutesTable.TABLE_NAME + "."
+                + DatabaseContract.SavedRoutesTable.COLUMN_NAME_3 + ", " // route distance
+                + DatabaseContract.SavedRoutesTable.TABLE_NAME + "."
+                + DatabaseContract.SavedRoutesTable.COLUMN_NAME_2 + ", " // route waypoints
+                + DatabaseContract.RouteStatisticsTable.TABLE_NAME + "."
+                + DatabaseContract.RouteStatisticsTable.COLUMN_NAME_2 + ", " // # times ran
+                + DatabaseContract.RouteStatisticsTable.TABLE_NAME + "."
+                + DatabaseContract.RouteStatisticsTable.COLUMN_NAME_3 + ", " // best time
+                + DatabaseContract.RouteStatisticsTable.TABLE_NAME + "."
+                + DatabaseContract.RouteStatisticsTable.COLUMN_NAME_4 // worst time
+                + " FROM '"
+                + DatabaseContract.RouteStatisticsTable.TABLE_NAME
+                + "' INNER JOIN '"
+                + DatabaseContract.SavedRoutesTable.TABLE_NAME
+                + "' ON "
+                + DatabaseContract.RouteStatisticsTable.TABLE_NAME + "." // where route_id = _id
+                + DatabaseContract.RouteStatisticsTable.COLUMN_NAME_1
+                + "="
+                + DatabaseContract.SavedRoutesTable.TABLE_NAME + "."
+                + DatabaseContract.SavedRoutesTable._ID;
 
-        c = db.rawQuery(selection, null);
+        Log.e("TAG", rawJoinQuery);
 
+        c = db.rawQuery(rawJoinQuery, null);
+
+        if (c == null)
+        {
+            Log.e("TAG", "ITS NULL HERE");
+        }
         //String itemName = c.getString(
         //        c.getColumnIndexOrThrow(DatabaseContract.SavedRoutesTable.COLUMN_NAME_1)
         // );
 
 
-        //ArrayAdapter<Route> arrayOfRoutes =
-        //        new ArrayAdapter<Route>(this, android.R.layout.andro, items);
-
+        Route newRoute;
 
         if(c != null && c.moveToFirst()) {
             do {
                 // Add item to adapter
-                Route newRoute = new Route(
+                newRoute = new Route(
                         c.getInt(c.getColumnIndex("_id")),
-                        c.getString(c.getColumnIndex("RunName")) + "\n",
+                        c.getString(c.getColumnIndex("RunName")),
                         c.getString(c.getColumnIndex("RunDistance")),
-                        c.getString(c.getColumnIndex("RunWaypoints")));
+                        c.getString(c.getColumnIndex("RunWaypoints")),
+                        c.getInt(c.getColumnIndex("TimesRan")),
+                        c.getString(c.getColumnIndex("BestTime")),
+                        c.getString(c.getColumnIndex("WorstTime")));
                 adapter.add(newRoute);
 
             } while (c.moveToNext());
         }
+
+
 
         listView.setAdapter(adapter);
         ListView lv1 = (ListView)findViewById(R.id.routesListView);
@@ -213,12 +239,21 @@ public class SavedRoutes extends Activity {
         // Mountain View, California: Google. Available from
         // https://developer.android.com/training/basics/data-storage/databases.html#DeleteDbRow [Accessed 17 December 2016].
 
+        // remove the selected route from the SavedRuns table
         // Define 'where' part of query.
         String selection = DatabaseContract.SavedRoutesTable._ID + " LIKE ?";
         // Specify arguments in placeholder order.
         String[] selectionArgs = { String.valueOf(route.id) };
         // Issue SQL statement.
         db.delete(DatabaseContract.SavedRoutesTable.TABLE_NAME, selection, selectionArgs);
+
+        // remove the selected route from the RoutesStatistics table
+        // Define 'where' part of query.
+        String selection2 = DatabaseContract.RouteStatisticsTable._ID + " LIKE ?";
+        // Specify arguments in placeholder order.
+        String[] selectionArgs2 = { String.valueOf(route.id) };
+        // Issue SQL statement.
+        db.delete(DatabaseContract.RouteStatisticsTable.TABLE_NAME, selection2, selectionArgs2);
 
         // If no routes exist after deleting then display some text
         checkRoutesExist();
@@ -231,6 +266,24 @@ public class SavedRoutes extends Activity {
         intent.putExtra("route", route);
         //start Activity
         startActivity(intent);
+    }
+
+    public void viewRoute(Route route){
+        TextView tv1 = (TextView)findViewById(R.id.viewBoxName);
+        tv1.setText(route.name);
+        tv1.setVisibility(View.VISIBLE);
+
+        TextView tv2 = (TextView)findViewById(R.id.viewBoxDistance);
+        tv2.setText("Distance: " + route.length);
+        tv2.setVisibility(View.VISIBLE);
+
+        TextView tv3 = (TextView)findViewById(R.id.viewBoxStats);
+        tv3.setText("Best Time: " + route.bestTime + "s" + "    Worst Time: " + route.worstTime + "s");
+        tv3.setVisibility(View.VISIBLE);
+
+        TextView tv4 = (TextView)findViewById(R.id.viewBoxNumberRan);
+        tv4.setText("Run Counter: " + route.numberTimesRan);
+        tv4.setVisibility(View.VISIBLE);
     }
 
     // RoutesAdapter is used to bind routes to the listview, this was adapted from a tutorial by CodePath.
@@ -252,14 +305,13 @@ public class SavedRoutes extends Activity {
                 convertView = LayoutInflater.from(getContext()).inflate(R.layout.item_route, parent, false);
             }
             // Lookup view for data population
-            TextView tv1 = (TextView) convertView.findViewById(R.id.tvName);
-            TextView tv2 = (TextView) convertView.findViewById(R.id.tvLength);
+            TextView tv1 = (TextView) convertView.findViewById(R.id.routeName);
+            // TextView tv2 = (TextView) convertView.findViewById(R.id.tvLength);
             // Populate the data into the template view using the data object
             tv1.setText(route.name);
-            tv2.setText(route.length);
 
 
-            // Find button
+            // Delete button
             Button deleteButton = (Button) convertView.findViewById(R.id.deleteButton);
             // Cache row position for the button using `setTag`
             deleteButton.setTag(position);
@@ -275,7 +327,7 @@ public class SavedRoutes extends Activity {
                 }
             });
 
-            // Lookup view for data population
+            // Run button
             Button runButton = (Button) convertView.findViewById(R.id.runButton);
             // Cache row position inside the button using `setTag`
             runButton.setTag(position);
@@ -292,6 +344,21 @@ public class SavedRoutes extends Activity {
                 }
             });
 
+            // View button
+            Button viewButton = (Button) convertView.findViewById(R.id.viewButton);
+            // Cache row position for the button using `setTag`
+            viewButton.setTag(position);
+            // Attach the click event handler
+            viewButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    int position = (Integer) view.getTag();
+                    // Access the row position and get the selected route
+                    Route route = getItem(position);
+                    // Call removeRoute method and give it the selected route as a parameter
+                    viewRoute(route);
+                }
+            });
             // Return the completed view to render on screen
             return convertView;
         }
@@ -304,7 +371,6 @@ public class SavedRoutes extends Activity {
         // Closing the database if the activity goes out of view
         db.close();
     }
-
 }
 
 

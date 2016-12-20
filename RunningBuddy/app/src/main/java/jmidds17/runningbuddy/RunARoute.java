@@ -30,6 +30,8 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -44,6 +46,10 @@ public class RunARoute extends Activity implements OnMapReadyCallback {
     long startTime = 0;
     long stopTime = 0;
     long timePassed = 0;
+    public String startLat;
+    public String startLong;
+    public String bestTime;
+    public String worstTime;
     Route routeToLoad;
     static int markerCount = 1;
     static Polyline polyline;
@@ -55,6 +61,13 @@ public class RunARoute extends Activity implements OnMapReadyCallback {
     static PolylineOptions activeRoute = new PolylineOptions();
     static List<Marker> wayPoints = new ArrayList<Marker>();
     static List<Marker> newWayPoints = new ArrayList<Marker>();
+
+    // Global variables needed for saving route to database using async task
+    SQLiteDatabase db;
+    DatabaseHelper mDbHelper;
+    String tempLatLong;
+    String tempRouteName;
+    String tempDistance;
 
 
     @Override
@@ -85,7 +98,10 @@ public class RunARoute extends Activity implements OnMapReadyCallback {
         Marker startRouteMarker;
         boolean doOnce = false;
 
-        // Creating a streing array to split the route waypoints line by line. (One location coords per line)
+        bestTime = route.bestTime;
+        worstTime = route.worstTime;
+
+        // Creating a string array to split the route waypoints line by line. (One location coords per line)
         String lines[] = route.waypoints.split("\\r?\\n");
 
 
@@ -214,34 +230,48 @@ public class RunARoute extends Activity implements OnMapReadyCallback {
     // Google (2016) Location [online]
     // Mountain View, California: Google. Available from
     // https://developer.android.com/reference/android/location/Location.html [Accessed 15 December 2016].
-    public float calculateDistance(List<Marker> routeToMeasure){
+    public double calculateDistance(List<Marker> routeToMeasure){
         float distance = 0; // double to hold the final tallied distance
         float[] results = new float[routeToMeasure.size()]; // float array to hold the distances between each location
 
         // Getting distance between start point and first waypoint (because start point(current phone location) is not stored in 'wayPoints')
-        Location.distanceBetween(Double.parseDouble(latitude), Double.parseDouble(longitude),
+        Location.distanceBetween(Double.parseDouble(startLat), Double.parseDouble(startLong),
                 routeToMeasure.get(0).getPosition().latitude, routeToMeasure.get(0).getPosition().longitude,
                 results);
 
-        // looping though each waypoint and adding the distance to result[] each time
+        // adding the first distance to 'distance' variable
+        distance = distance + results[0];
+
+        // looping though each waypoint and adding the distance each time
         for (int i = 0; i < routeToMeasure.size() - 1; i++) {
             Location.distanceBetween(routeToMeasure.get(i).getPosition().latitude, routeToMeasure.get(i).getPosition().longitude,
                     routeToMeasure.get(i+1).getPosition().latitude, routeToMeasure.get(i+1).getPosition().longitude,
                     results);
+
+            // Adding up the distance as it iterates through the way points
+            distance = distance + results[0];
         }
 
-        // Tallying up results[] to get the final run distance
-        for (float result : results) {
-            distance = distance + result;
-        }
+        // return distance rounded to 2 decimal places
+        return round(distance, 2);
+    }
 
-        return distance;
+    // 'round()' method is taken directly from(below), and is used to round a double to a selected amount of decimal places.
+    // Jonik (2010) Round a double to 2 decimal places
+    // [stack overflow] 11 May. Available from
+    // https://stackoverflow.com/questions/2808535/round-a-double-to-2-decimal-places [Accessed 18 December 2016].
+    public double round(double value, int places) {
+        if (places < 0) throw new IllegalArgumentException();
+
+        BigDecimal bd = new BigDecimal(value);
+        bd = bd.setScale(places, RoundingMode.HALF_UP);
+        return bd.doubleValue();
     }
 
     // Saves the current markers as a route to a database and takes the user to SavedRoutes activity.
     public void saveRoute(View view) {
         // If the user hasn't added any waypoints then it won't save
-        if (newWayPoints.size() == 0)
+        if (wayPoints.size() == 0)
         {
             // Show toast message that there is no waypoints to save
             Context context = getApplicationContext();
@@ -252,39 +282,27 @@ public class RunARoute extends Activity implements OnMapReadyCallback {
         }
         // Else save waypoints
         else {
-            // Temporary string to hold the marker lat/long coordinates - will hold cords for every marker on a new line for easier parsing later.
-            // Defaulted to hold the user's current position.
-            String tempLatLong = String.valueOf(latitude) + "," + String.valueOf(longitude) + "\n";
-            // String to hold the default name of each route, will be configurable by user later
-            String tempRouteName;
+            // Initialising mDbHelper. This is needed in the AsyncTask called below.
+            mDbHelper = DatabaseHelper.getInstance(this);
 
-            DatabaseHelper mDbHelper = DatabaseHelper.getInstance(this);
-            // Gets the data repository in write mode
-            SQLiteDatabase db = mDbHelper.getWritableDatabase();
-            // Sets the tempRouteName that will be used to write a default route name when the user adds a route.
-            // This name will be number of records + 1. User can configure their own name later if they want.
-            tempRouteName = "Route " + String.valueOf(DatabaseHelper.getNumRecords(db, DatabaseContract.SavedRoutesTable.TABLE_NAME) + 1);
+            // The below variables need to be initialised before calling the Async. They won't work if put inside the async as they require operations that can't be
+            // performed if not on the main thread. This is ok as the main point of Async is calling 'getWritableDatabase' on a different thread.
 
-            // Create a new map of values, where column names are the keys
-            ContentValues values = new ContentValues();
-            values.put(DatabaseContract.SavedRoutesTable.COLUMN_NAME_1, tempRouteName);
-            for (int i = 0; i < newWayPoints.size(); i++) {
-                tempLatLong = tempLatLong + String.valueOf(newWayPoints.get(i).getPosition().latitude) + "," + String.valueOf(newWayPoints.get(i).getPosition().longitude + "\n");
+            // 'tempDistance' used to calculate the distance of the route
+            tempDistance = String.valueOf(calculateDistance(wayPoints));
+            // 'tempLatLong' holds all the marker lat/long coordinates - will hold cords for every marker on a new line for easier parsing later.
+            // Line below defaults to hold the user's start point of the route (needed as this start point isn't held in 'waypoints').
+            tempLatLong = startLat + "," + startLong + "\n";
+            // now loop through waypoints and add all the cords to tempLatLong
+            for (int i = 0; i < wayPoints.size(); i++) {
+                Log.e("debugger", "testing");
+                tempLatLong = tempLatLong + String.valueOf(wayPoints.get(i).getPosition().latitude) + "," + String.valueOf(wayPoints.get(i).getPosition().longitude + "\n");
             }
-            values.put(DatabaseContract.SavedRoutesTable.COLUMN_NAME_2, tempLatLong);
-            values.put(DatabaseContract.SavedRoutesTable.COLUMN_NAME_3, String.valueOf(calculateDistance(newWayPoints)));
 
-
-            // Insert the new row, returning the primary key value of the new row
-            long newRowId = db.insert(DatabaseContract.SavedRoutesTable.TABLE_NAME, null, values);
-
-            mDbHelper.close();
-            db.close();
-
-            // Finally start the intent to go to SavedRoutes activity
-            Intent intent = new Intent(this, SavedRoutes.class);
-            //start Activity
-            startActivity(intent);
+            // Calling the async task to write the data to the database
+            // An async task is needed here as - following Google developer's recommendations 'getWritableDatabase()' shouldn't be called
+            // in the main thread.
+            new AsyncTaskSaveRoute().execute();
         }
     }
 
@@ -382,8 +400,10 @@ public class RunARoute extends Activity implements OnMapReadyCallback {
     // Controls what the user first sees on the map (default location, zoom, markers)
     private void configureMapDefault() {
         customMap.clear(); // Clears current marker before adding an updated one
-        Log.e("TAG", latitude);
         if (latitude != null) {
+            startLat = latitude;
+            startLong = longitude;
+
             // Google (2016) CameraUpdateFactory [online]
             // Mountain View, California: Google. Available from
             // https://developers.google.com/android/reference/com/google/android/gms/maps/CameraUpdateFactory [Accessed 27 November 2016].
@@ -393,6 +413,8 @@ public class RunARoute extends Activity implements OnMapReadyCallback {
                     .title("You are here"));
             plannedRoute.add(new LatLng(Double.parseDouble(latitude),Double.parseDouble(longitude)));
         } else {
+            startLat = latitude;
+            startLong = longitude;
             // If no location exists, defaults to 0,0 so app doesn't crash
             Marker currentLocMarker = customMap.addMarker(new MarkerOptions()
                     .position(new LatLng(0, 0))
@@ -508,21 +530,54 @@ public class RunARoute extends Activity implements OnMapReadyCallback {
         }
     }
 
-    public class AsyncTaskStartTimer extends AsyncTask<String, String, String> {
+    public class AsyncTaskSaveRoute extends AsyncTask<String, String, String> {
 
         ProgressDialog pd;
 
         @Override
         protected void onPreExecute() {
-            Log.e("onPreExecute", "huh");
+            // Progress dialog to let the user know something is happeneing.
             pd=ProgressDialog.show(RunARoute.this,"","Please Wait",false);
         }
 
         @Override
-
         protected String doInBackground(String... arg0)  {
             try {
+                // Gets the data repository in write mode
+                db = mDbHelper.getWritableDatabase();
 
+                ContentValues values = new ContentValues();
+                timePassed = timePassed / 1000; // converting timepassed to show seconds only
+
+                // updating run count
+                values.put(DatabaseContract.RouteStatisticsTable.COLUMN_NAME_2, routeToLoad.numberTimesRan + 1);
+                // If new time is faster than the saved best time, then update with the new best time
+                if ((int)timePassed < Double.parseDouble(bestTime)){
+                    values.put(DatabaseContract.RouteStatisticsTable.COLUMN_NAME_3, timePassed);
+                }
+                // else if this is the first time the user has run this route then update with the new time
+                else if (Double.parseDouble(bestTime) == 0){
+                    values.put(DatabaseContract.RouteStatisticsTable.COLUMN_NAME_3, timePassed);
+                }
+                // If new time is slower than saved worst time, then update with the new worst time
+                if ((int)timePassed > Double.parseDouble(worstTime)){
+                    // update the worst time with the new worst time
+                    values.put(DatabaseContract.RouteStatisticsTable.COLUMN_NAME_4, timePassed);
+                }
+
+                // Which row to update, based on the title
+                String selection = DatabaseContract.RouteStatisticsTable.COLUMN_NAME_1 + " LIKE ?";
+                String[] selectionArgs = { String.valueOf(routeToLoad.id) };
+
+                // Update the for the RouteStatisticsTable.
+                db.update(
+                        DatabaseContract.RouteStatisticsTable.TABLE_NAME,
+                        values,
+                        selection,
+                        selectionArgs);
+
+                // Closing db connection
+                db.close();
 
             } catch (Exception e) {
                 e.printStackTrace();
@@ -530,18 +585,13 @@ public class RunARoute extends Activity implements OnMapReadyCallback {
             return null;
         }
 
-        protected void onProgressUpdate()
-        {
-
-        }
-
         @Override
-        // Below method will run when service HTTP request is complete, this will stop location updates
-        // from LocationHelper, as well as setting the new information to their text views.
         protected void onPostExecute(String strFromDoInBg) {
-            Log.e("onPostExecute", "huh");
-
-            configureMapDefault();
+            pd.dismiss();
+            // Finally start the intent to go to SavedRoutes activity
+            Intent intent = new Intent(RunARoute.this, SavedRoutes.class);
+            //start Activity
+            startActivity(intent);
         }
     }
 }

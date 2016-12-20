@@ -17,12 +17,19 @@ public class Route implements Parcelable {
     public String name;
     public String length;
     public String waypoints;
+    public int numberTimesRan;
+    public String bestTime;
+    public String worstTime;
 
-    public Route(Integer id, String name, String length, String waypoints) {
+
+    public Route(Integer id, String name, String length, String waypoints, int numbertimesran, String besttime, String worsttime) {
         this.id = id;
         this.name = name;
         this.length = length;
         this.waypoints = waypoints;
+        this.numberTimesRan = numbertimesran;
+        this.bestTime = besttime;
+        this.worstTime = worsttime;
     }
 
     @Override
@@ -36,6 +43,9 @@ public class Route implements Parcelable {
         out.writeString(name);
         out.writeString(length);
         out.writeString(waypoints);
+        out.writeInt(numberTimesRan);
+        out.writeString(bestTime);
+        out.writeString(worstTime);
     }
 
     public static final Parcelable.Creator<Route> CREATOR
@@ -54,5 +64,8 @@ public class Route implements Parcelable {
         name = in.readString();
         length = in.readString();
         waypoints = in.readString();
+        numberTimesRan = in.readInt();
+        bestTime = in.readString();
+        worstTime = in.readString();
     }
 }

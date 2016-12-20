@@ -503,11 +503,10 @@ public class TrackRun extends Activity implements OnMapReadyCallback {
                 // Writing default route data to the RouteStatisticsTable
                 // newRowId can now be used as a Foreign key for this table
                 values2.put(DatabaseContract.RouteStatisticsTable.COLUMN_NAME_1, String.valueOf(newRowId)); // route_id
-                values2.put(DatabaseContract.RouteStatisticsTable.COLUMN_NAME_2, "1"); // # times ran
+                values2.put(DatabaseContract.RouteStatisticsTable.COLUMN_NAME_2, 1); // # times ran
                 values2.put(DatabaseContract.RouteStatisticsTable.COLUMN_NAME_3, timePassed); // best time
                 values2.put(DatabaseContract.RouteStatisticsTable.COLUMN_NAME_4, timePassed); // worst time
-                values2.put(DatabaseContract.RouteStatisticsTable.COLUMN_NAME_5, timePassed); // average time
-                // because this is the first time this run has been tracked, columns 3,4,5 will all be the same.
+                // because this is the first time this run has been tracked, columns 3,4 will be the same.
 
                 // Insert the new row into the database
                 db.insert(DatabaseContract.RouteStatisticsTable.TABLE_NAME, null, values2);

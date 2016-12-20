@@ -29,6 +29,8 @@ import java.net.URL;
 import android.widget.*;
 import android.util.Log;
 
+import javax.security.auth.login.LoginException;
+
 public class MainActivity extends Activity {
     // global variables for the weather widget
     String weatherLocation;
@@ -47,10 +49,7 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        mLoc = new LocationHelper(MainActivity.this);
-
     }
-
 
     // Gets called when app comes back into view eg after user has hit the home screen and returns to app screen.
     @Override
@@ -58,6 +57,15 @@ public class MainActivity extends Activity {
         Log.e("TAG", "onResume ");
         super.onResume();
 
+        try {
+            // Creating instance of LocationHelper.
+            // This will start the connection to the googleApiClient in LocationHelper class so that if the user
+            // presses the check weather button it will be already connected and ready to get location
+            mLoc = new LocationHelper(MainActivity.this);
+        }
+        catch (Exception e){
+            e.printStackTrace();
+        }
     }
 
     @Override
@@ -103,10 +111,7 @@ public class MainActivity extends Activity {
 
 
     public void configureWeather(View view) {
-        // create an intent to start TrackRun
-        //Intent intent = new Intent(this, TrackRun.class);
-        // start Activity
-        //startActivity(intent);
+
         mLoc.connectToApi();
         mLoc.startLocationUpdates();
 
