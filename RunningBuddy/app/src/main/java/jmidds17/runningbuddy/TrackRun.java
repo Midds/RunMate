@@ -181,6 +181,7 @@ public class TrackRun extends Activity implements OnMapReadyCallback {
 
         return distance;
     }
+    /*
 
     // Saves the current markers as a route to a database and takes the user to SavedRoutes activity.
     public void saveRoute(View view) {
@@ -231,7 +232,7 @@ public class TrackRun extends Activity implements OnMapReadyCallback {
             startActivity(intent);
         }
     }
-
+    */
 
     // Gets called when app comes back into view eg after user has hit the home screen and returns to app screen.
     @Override

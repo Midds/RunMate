@@ -461,7 +461,7 @@ public class RunARoute extends Activity implements OnMapReadyCallback {
                     publishProgress();
                     if (mLoc.mGoogleApiClient.isConnected())
                     {
-                        Log.e("doInBackground ", "ITS DONE JIM!");
+                        Log.e("doInBackground ", "mloc connected");
                         break;
                     }
                 }
@@ -472,11 +472,11 @@ public class RunARoute extends Activity implements OnMapReadyCallback {
 
                 if(latitudea != null)
                 {
-                    Log.e("doInBackground jim! ", String.valueOf(latitude));
+                    Log.e("doInBackground ", String.valueOf(latitude));
                 }
                 else
                 {
-                    Log.e("doInBackground", "its null jim");
+                    Log.e("doInBackground", "its null");
 
                 }
 

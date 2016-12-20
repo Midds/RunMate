@@ -61,6 +61,14 @@ public class SavedRoutes extends Activity {
         new AsyncTaskGetSavedData().execute();
     }
 
+    @Override
+    protected void onPause() {
+        Log.e("TAG", "SavedRoutes onPause ");
+        super.onPause();
+        c.close();
+        db.close();
+    }
+
     public void planNewRoute(View view) {
         //create an intent to start PlanRoute activity
         Intent intent = new Intent(this, PlanRoute2.class);
@@ -300,6 +308,7 @@ public class SavedRoutes extends Activity {
         // Closing the database if the activity goes out of view
         db.close();
     }
+
 }
 
 

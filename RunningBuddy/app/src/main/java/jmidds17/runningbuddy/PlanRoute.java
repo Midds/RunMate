@@ -56,6 +56,8 @@ import java.util.List;
 
 // TODO - delete this, remember directions api key
 // AIzaSyDvBnRK1dbjoHGo9I_5Hsb0f4bxARcda6U
+public class PlanRoute extends Activity {
+/*
 public class PlanRoute extends Activity implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, LocationListener, OnMapReadyCallback {
     //global variables needed for google play services
     public GoogleApiClient mGoogleApiClient;
@@ -296,7 +298,7 @@ public class PlanRoute extends Activity implements GoogleApiClient.ConnectionCal
             toast.show();
         }
     }
-    */
+
 
     public void saveRoute(View view) {
         String tempLatLong = "";
@@ -464,4 +466,5 @@ public class PlanRoute extends Activity implements GoogleApiClient.ConnectionCal
         Log.e("onConnectionFailed", "huh");
 
     }
+    */
 }

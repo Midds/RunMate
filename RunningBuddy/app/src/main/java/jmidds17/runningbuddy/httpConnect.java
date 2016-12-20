@@ -13,6 +13,7 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLConnection;
 
 import android.app.Activity;
 import android.content.Context;
@@ -67,6 +68,9 @@ public class httpConnect {
                         Log.e(TAG, "Error parsing data " + e.toString());
                     }
                     // return JSON String containing data to activity
+                    finally {
+                        restConnection.disconnect();
+                    }
                     return json;
             }
             // HTTP 200 and 201 error handling from switch statement

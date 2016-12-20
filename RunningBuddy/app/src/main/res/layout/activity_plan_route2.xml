@@ -48,6 +48,6 @@
         android:id="@+id/saveRouteButton"
         android:layout_centerHorizontal="true"
         android:layout_alignParentBottom="true"
-        android:onClick="saveRoute" />
+        android:onClick="saveRouteButton" />
 
 </RelativeLayout>

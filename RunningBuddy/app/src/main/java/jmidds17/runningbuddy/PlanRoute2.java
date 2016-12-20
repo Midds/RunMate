@@ -54,6 +54,14 @@ public class PlanRoute2 extends Activity implements OnMapReadyCallback {
     PolylineOptions tempRoute = new PolylineOptions();
     Polyline polyline;
     List<Marker> wayPoints = new ArrayList<Marker>();
+    //DatabaseHelper mDbHelper = new DatabaseHelper(getBaseContext());
+    DatabaseHelper mDbHelper;
+    // Gets the data repository in write mode
+    SQLiteDatabase db;
+    String tempLatLong;
+    // String to hold the default name of each route, will be configurable by user later
+    String tempRouteName;
+    String tempDistance;
 
     // Filename for saving route once user clicks save route button
     String filename = "savedroute";
@@ -101,110 +109,12 @@ public class PlanRoute2 extends Activity implements OnMapReadyCallback {
         configureMapDefault();
     }
 
-
-
-    // Using Location.distanceBetween to calculate the run distance. Retruns in kilometers.
-    // Google (2016) Location [online]
-    // Mountain View, California: Google. Available from
-    // https://developer.android.com/reference/android/location/Location.html [Accessed 15 December 2016].
-    public float calculateDistance(List<Marker> routeToMeasure){
-        float distance = 0; // double to hold the final tallied distance
-        float[] results = new float[routeToMeasure.size()]; // float array to hold the distances between each location
-
-        // Getting distance between start point and first waypoint (because start point(current phone location) is not stored in 'wayPoints')
-        Location.distanceBetween(Double.parseDouble(latitude), Double.parseDouble(longitude),
-                routeToMeasure.get(0).getPosition().latitude, routeToMeasure.get(0).getPosition().longitude,
-                results);
-
-        // looping though each waypoint and adding the distance to result[] each time
-        for (int i = 0; i < routeToMeasure.size() - 1; i++) {
-            Location.distanceBetween(routeToMeasure.get(i).getPosition().latitude, routeToMeasure.get(i).getPosition().longitude,
-                    routeToMeasure.get(i+1).getPosition().latitude, routeToMeasure.get(i+1).getPosition().longitude,
-                    results);
-        }
-
-        // Tallying up results[] to get the final run distance
-        for (float result : results) {
-            distance = distance + result;
-        }
-
-
-        return distance;
-    }
-
-    // Saves the current markers as a route to a database and takes the user to SavedRoutes activity.
-    public void saveRoute(View view) {
-        // If the user hasn't added any waypoints then it won't save
-        if (wayPoints.size() == 0)
-        {
-            // Show toast message that there is no waypoints to save
-            Context context = getApplicationContext();
-            CharSequence text = "You need at least one Way Point to save a route!";
-            int duration = Toast.LENGTH_LONG;
-            Toast toast = Toast.makeText(context, text, duration);
-            toast.show();
-        }
-        // Else save waypoints
-        else {
-            // Temporary string to hold the marker lat/long coordinates - will hold cords for every marker on a new line for easier parsing later.
-            // Defaulted to hold the user's current position.
-            String tempLatLong = String.valueOf(latitude) + "," + String.valueOf(longitude) + "\n";
-            // String to hold the default name of each route, will be configurable by user later
-            String tempRouteName;
-
-            //DatabaseHelper mDbHelper = new DatabaseHelper(getBaseContext());
-            DatabaseHelper mDbHelper = DatabaseHelper.getInstance(this);
-            // Gets the data repository in write mode
-            SQLiteDatabase db = mDbHelper.getWritableDatabase();
-            // Sets the tempRouteName that will be used to write a default route name when the user adds a route.
-            // This name will be number of records + 1. User can configure their own name later if they want.
-            tempRouteName = "Route " + String.valueOf(DatabaseHelper.getNumRecords(db, DatabaseContract.SavedRoutesTable.TABLE_NAME) + 1);
-
-            // Create a new map of values, where column names are the keys
-            ContentValues values = new ContentValues();
-            values.put(DatabaseContract.SavedRoutesTable.COLUMN_NAME_1, tempRouteName);
-            for (int i = 0; i < wayPoints.size(); i++) {
-                tempLatLong = tempLatLong + String.valueOf(wayPoints.get(i).getPosition().latitude) + "," + String.valueOf(wayPoints.get(i).getPosition().longitude + "\n");
-            }
-            values.put(DatabaseContract.SavedRoutesTable.COLUMN_NAME_2, tempLatLong);
-            values.put(DatabaseContract.SavedRoutesTable.COLUMN_NAME_3, String.valueOf(calculateDistance(wayPoints)));
-
-
-            // Insert the new row, returning the primary key value of the new row
-            long newRowId = db.insert(DatabaseContract.SavedRoutesTable.TABLE_NAME, null, values);
-
-
-            db.close();
-
-            // Finally start the intent to go to SavedRoutes activity
-            Intent intent = new Intent(this, SavedRoutes.class);
-            //start Activity
-            startActivity(intent);
-        }
-    }
-
-
     // Gets called when app comes back into view eg after user has hit the home screen and returns to app screen.
     @Override
     public void onResume() {
         Log.e("TAG", "onResume ");
         super.onResume();
 
-        //markerCount = 1; // resets marker count
-        //wayPoints.clear(); // clears the listarray of waypoints
-        // customMap.clear(); // removes all custom markers from map
-        //plannedRoute = new PolylineOptions(); // Clears the polyline route on reset
-        // updateUI(); // replaces currentlocation origin marker on map
-        //removeLastMarker();
-
-        if (latitude != null)
-        {
-            Log.e("onResume", String.valueOf(latitude));
-        }
-        else
-        {
-            Log.e("onResume planroute2", "latitude null");
-        }
 
         // Getting new location coordinates (before configuring map with these coordinates)
         new AsyncTaskGetLocation().execute();
@@ -337,6 +247,76 @@ public class PlanRoute2 extends Activity implements OnMapReadyCallback {
     }
 
 
+
+
+    // Saves the current markers as a route to a database and takes the user to SavedRoutes activity.
+    public void saveRouteButton(View view) {
+        // If the user hasn't added any waypoints then it won't save
+        if (wayPoints.size() == 0)
+        {
+
+
+            // Show toast message that there is no waypoints to save
+            Context context = getApplicationContext();
+            CharSequence text = "You need at least one Way Point to save a route!";
+            int duration = Toast.LENGTH_LONG;
+            Toast toast = Toast.makeText(context, text, duration);
+            toast.show();
+        }
+        // Else save waypoints
+        else {
+            // Initialising mDbHelper. This is needed in the AsyncTask called below.
+            mDbHelper = DatabaseHelper.getInstance(this);
+
+            // The below variables need to be initialised before calling the Async. They won't work if put inside the async as they require operations that can't be
+            // performed if not on the main thread. This is ok as the main point of Async is calling 'getWritableDatabase' on a different thread.
+
+            // 'tempDistance' used to calculate the distance of the route
+            tempDistance = String.valueOf(calculateDistance(wayPoints));
+            // Temporary string to hold the marker lat/long coordinates - will hold cords for every marker on a new line for easier parsing later.
+            // Line below defaults to hold the user's current position (the start point of the route).
+            tempLatLong = String.valueOf(latitude) + "," + String.valueOf(longitude) + "\n";
+            // now loop through waypoints and add all the cords to tempLatLong
+            for (int i = 0; i < wayPoints.size(); i++) {
+                Log.e("debugger", "testing");
+                tempLatLong = tempLatLong + String.valueOf(wayPoints.get(i).getPosition().latitude) + "," + String.valueOf(wayPoints.get(i).getPosition().longitude + "\n");
+            }
+
+            // Calling the async task to write the data to the database
+            // An async task is needed here as - following Google developer's recommendations 'getWritableDatabase()' shouldn't be called
+            // in the main thread.
+            new AsyncTaskSaveRoute().execute();
+        }
+    }
+
+    // Using Location.distanceBetween to calculate the run distance. Retruns in kilometers.
+    // Google (2016) Location [online]
+    // Mountain View, California: Google. Available from
+    // https://developer.android.com/reference/android/location/Location.html [Accessed 15 December 2016].
+    public float calculateDistance(List<Marker> routeToMeasure){
+        float distance = 0; // double to hold the final tallied distance
+        float[] results = new float[routeToMeasure.size()]; // float array to hold the distances between each location
+
+        // Getting distance between start point and first waypoint (because start point(current phone location) is not stored in 'wayPoints')
+        Location.distanceBetween(Double.parseDouble(latitude), Double.parseDouble(longitude),
+                routeToMeasure.get(0).getPosition().latitude, routeToMeasure.get(0).getPosition().longitude,
+                results);
+
+        // adding the first distance to 'distance' variable
+        distance = distance + results[0];
+
+        // looping though each waypoint and adding the distance each time
+        for (int i = 0; i < routeToMeasure.size() - 1; i++) {
+            Location.distanceBetween(routeToMeasure.get(i).getPosition().latitude, routeToMeasure.get(i).getPosition().longitude,
+                    routeToMeasure.get(i+1).getPosition().latitude, routeToMeasure.get(i+1).getPosition().longitude,
+                    results);
+
+            // Adding up the distance as it iterates through the way points
+            distance = distance + results[0];
+        }
+        return distance;
+    }
+
     public class AsyncTaskGetLocation extends AsyncTask<String, String, String> {
 
         ProgressDialog pd;
@@ -348,14 +328,8 @@ public class PlanRoute2 extends Activity implements OnMapReadyCallback {
         }
 
         @Override
-        // This method will get the last long/lat from the LocationHelper class to append to the api call URL.
-        // After this the call will be made using the httpConnect class, and the returned JSON will be parsed
-        // and weatherValues will be changed to reflect this.
         protected String doInBackground(String... arg0)  {
             try {
-                Log.e("doInBackground ", "planRoute2 huh");
-
-
 
                 while (mLoc.mGoogleApiClient.isConnecting())
                 {
@@ -363,23 +337,9 @@ public class PlanRoute2 extends Activity implements OnMapReadyCallback {
                     publishProgress();
                     if (mLoc.mGoogleApiClient.isConnected())
                     {
-                        Log.e("doInBackground ", "ITS DONE JIM!");
+                        Log.e("doInBackground ", "mloc connected!");
                         break;
                     }
-                }
-
-                String latitudea = mLoc.getLatitude();
-                String longitudea = mLoc.getLongitude();
-
-
-                if(latitudea != null)
-                {
-                    Log.e("doInBackground jim! ", String.valueOf(latitude));
-                }
-                else
-                {
-                    Log.e("doInBackground", "its null jim");
-
                 }
 
             } catch (Exception e) {
@@ -388,14 +348,7 @@ public class PlanRoute2 extends Activity implements OnMapReadyCallback {
             return null;
         }
 
-        protected void onProgressUpdate()
-        {
-
-        }
-
         @Override
-        // Below method will run when service HTTP request is complete, this will stop location updates
-        // from LocationHelper, as well as setting the new information to their text views.
         protected void onPostExecute(String strFromDoInBg) {
             Log.e("onPostExecute", "huh");
             //mLoc.stopLocationUpdates();
@@ -410,6 +363,54 @@ public class PlanRoute2 extends Activity implements OnMapReadyCallback {
             // Configure the map
             configureMapDefault();
             pd.dismiss();
+        }
+    }
+
+    public class AsyncTaskSaveRoute extends AsyncTask<String, String, String> {
+
+        ProgressDialog pd;
+
+        @Override
+        protected void onPreExecute() {
+            // Progress dialog to let the user know something is happeneing.
+            pd=ProgressDialog.show(PlanRoute2.this,"","Please Wait",false);
+        }
+
+        @Override
+        protected String doInBackground(String... arg0)  {
+            try {
+                // Gets the data repository in write mode
+                db = mDbHelper.getWritableDatabase();
+
+                // Sets the tempRouteName that will be used to write a default route name when the user adds a route.
+                // This name will be number of records + 1. User can configure their own name later if they want.
+                tempRouteName = "Route " + String.valueOf(DatabaseHelper.getNumRecords(db, DatabaseContract.SavedRoutesTable.TABLE_NAME) + 1);
+
+                // Create a new map of values, where column names are the keys
+                ContentValues values = new ContentValues();
+                values.put(DatabaseContract.SavedRoutesTable.COLUMN_NAME_1, tempRouteName);
+                values.put(DatabaseContract.SavedRoutesTable.COLUMN_NAME_2, tempLatLong);
+                values.put(DatabaseContract.SavedRoutesTable.COLUMN_NAME_3, tempDistance);
+
+                // Insert the new row, returning the primary key value of the new row
+                db.insert(DatabaseContract.SavedRoutesTable.TABLE_NAME, null, values);
+
+                // Closing db connection
+                db.close();
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(String strFromDoInBg) {
+            pd.dismiss();
+            // Finally start the intent to go to SavedRoutes activity
+            Intent intent = new Intent(PlanRoute2.this, SavedRoutes.class);
+            //start Activity
+            startActivity(intent);
         }
     }
 }

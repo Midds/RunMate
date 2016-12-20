@@ -63,7 +63,7 @@
             android:textAppearance="?android:attr/textAppearanceMedium"
             android:text="Wind Conditions"
             android:id="@+id/weatherWind"
-            android:layout_below="@+id/weatherDescription"
+            android:layout_above="@+id/weatherDescription"
             android:layout_alignEnd="@+id/weatherLocation" />
 
         <TextView
@@ -72,8 +72,10 @@
             android:textAppearance="?android:attr/textAppearanceMedium"
             android:text="Description"
             android:id="@+id/weatherDescription"
-            android:layout_alignBottom="@+id/weatherTemperature"
-            android:layout_alignParentStart="true" />
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentStart="true"
+            android:textSize="15dp"
+            android:textIsSelectable="false" />
 
         <ImageView
             android:layout_width="wrap_content"

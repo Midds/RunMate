@@ -31,6 +31,7 @@ import com.google.android.gms.maps.model.Marker;
  * function to their full extent. Therefore having this locationHelper class saves a lot of code from
  * being repeated in the other activities.
  */
+
 public class LocationHelper extends Activity implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, LocationListener {
     //global variables needed for google play services
     public GoogleApiClient mGoogleApiClient;
@@ -43,6 +44,7 @@ public class LocationHelper extends Activity implements GoogleApiClient.Connecti
     private Context mContext;
     static public boolean upToDate = false;
     Activity calleractivity;
+
 
     public LocationHelper(Context context) {
         Log.e("LocationHelper", "huh");
@@ -243,8 +245,9 @@ public class LocationHelper extends Activity implements GoogleApiClient.Connecti
             // Google (2016) Receiving Location Updates: Request Location Updates [online]
             // Mountain View, California: Google. Available from
             // https://developer.android.com/training/location/receive-location-updates.html [Accessed 23 November 2016].
-            LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
-
+            if (mGoogleApiClient.isConnected()) {
+                LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
+            }
         }
     }
 
@@ -269,6 +272,7 @@ public class LocationHelper extends Activity implements GoogleApiClient.Connecti
             //LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
             mGoogleApiClient.disconnect();
         }
+
     }
 
     @Override
