@@ -8,8 +8,6 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.Parcel;
-import android.os.Parcelable;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -23,8 +21,6 @@ import android.widget.TextView;
 
 
 import java.util.ArrayList;
-
-import javax.security.auth.login.LoginException;
 
 
 public class SavedRoutes extends Activity {
@@ -71,7 +67,7 @@ public class SavedRoutes extends Activity {
 
     public void planNewRoute(View view) {
         //create an intent to start PlanRoute activity
-        Intent intent = new Intent(this, PlanRoute2.class);
+        Intent intent = new Intent(this, PlanRoute.class);
         //start Activity
         startActivity(intent);
 

@@ -45,7 +45,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Save Route"
-        android:id="@+id/saveButton"
+        android:id="@+id/saveRouteButton"
         android:layout_centerHorizontal="true"
         android:layout_alignParentBottom="true"
         android:onClick="saveRouteButton" />

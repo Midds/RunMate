@@ -208,7 +208,7 @@ public class LocationHelper extends Activity implements GoogleApiClient.Connecti
         switch (parentActivity){
             case "MainActivity": Log.e("switch statement", "its mainactivity");
                 break;
-            case "PlanRoute2": Log.e("switch statement", "its planroute2");
+            case "PlanRoute": Log.e("switch statement", "its planroute");
                 break;
             case "TrackRun": TrackRun.getUpdates();
                 break;

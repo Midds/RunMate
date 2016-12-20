@@ -4,21 +4,16 @@ import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.location.Location;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
-import android.support.v4.content.ContextCompat;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.TextView;
 // add below
-import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 import android.os.AsyncTask;
 
@@ -30,14 +25,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
-import java.util.ArrayList;
-import android.widget.*;
-import java.util.Date;
-import android.util.Log;
 
-import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.location.LocationServices;
+import android.widget.*;
+import android.util.Log;
 
 public class MainActivity extends Activity {
     // global variables for the weather widget
@@ -85,7 +75,7 @@ public class MainActivity extends Activity {
         mLoc.stopLocationUpdates();
 
         // intent to start PlanRoute
-        Intent intent = new Intent(this, PlanRoute2.class);
+        Intent intent = new Intent(this, PlanRoute.class);
         // start Activity
         startActivity(intent);
     }

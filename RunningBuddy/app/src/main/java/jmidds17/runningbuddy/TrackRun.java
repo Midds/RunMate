@@ -49,8 +49,10 @@ public class TrackRun extends Activity implements OnMapReadyCallback {
 
     static private GoogleMap customMap;
     private Marker currentLocMarker;
-    static public String longitude = "-0.5431253";
     static public String latitude = "53.2260276";
+    static public String longitude = "-0.5431253";
+    public String startLat;
+    public String startLong;
     long startTime = 0;
     long stopTime = 0;
     long timePassed = 0;
@@ -60,8 +62,12 @@ public class TrackRun extends Activity implements OnMapReadyCallback {
     static Polyline polyline;
     static List<Marker> wayPoints = new ArrayList<Marker>();
 
-    // Filename for saving route once user clicks save route button
-    String filename = "savedroute";
+    // Global variables needed for saving route to database using async task
+    SQLiteDatabase db;
+    DatabaseHelper mDbHelper;
+    String tempLatLong;
+    String tempRouteName;
+    String tempDistance;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -74,10 +80,7 @@ public class TrackRun extends Activity implements OnMapReadyCallback {
 
         // Getting a handle to the fragment where the map is located
         getMapFragmentHandle();
-
     }
-
-
 
     protected void onStart() {
         mLoc.mGoogleApiClient.connect();
@@ -129,6 +132,10 @@ public class TrackRun extends Activity implements OnMapReadyCallback {
         // enabling the finish run button
         Button finishButton = (Button)findViewById(R.id.finishRunButton);
         finishButton.setEnabled(true);
+
+        // greying out the button to save the run while the timer is running
+        Button saveButton = (Button)findViewById(R.id.saveRunButton);
+        saveButton.setEnabled(false);
     }
 
     public void finishRunTimer(View view) {
@@ -163,25 +170,25 @@ public class TrackRun extends Activity implements OnMapReadyCallback {
         float[] results = new float[routeToMeasure.size()]; // float array to hold the distances between each location
 
         // Getting distance between start point and first waypoint (because start point(current phone location) is not stored in 'wayPoints')
-        Location.distanceBetween(Double.parseDouble(latitude), Double.parseDouble(longitude),
+        Location.distanceBetween(Double.parseDouble(startLat), Double.parseDouble(startLong),
                 routeToMeasure.get(0).getPosition().latitude, routeToMeasure.get(0).getPosition().longitude,
                 results);
 
-        // looping though each waypoint and adding the distance to result[] each time
+        // adding the first distance to 'distance' variable
+        distance = distance + results[0];
+
+        // looping though each waypoint and adding the distance each time
         for (int i = 0; i < routeToMeasure.size() - 1; i++) {
             Location.distanceBetween(routeToMeasure.get(i).getPosition().latitude, routeToMeasure.get(i).getPosition().longitude,
                     routeToMeasure.get(i+1).getPosition().latitude, routeToMeasure.get(i+1).getPosition().longitude,
                     results);
-        }
 
-        // Tallying up results[] to get the final run distance
-        for (float result : results) {
-            distance = distance + result;
+            // Adding up the distance as it iterates through the way points
+            distance = distance + results[0];
         }
-
         return distance;
     }
-    /*
+
 
     // Saves the current markers as a route to a database and takes the user to SavedRoutes activity.
     public void saveRoute(View view) {
@@ -197,42 +204,30 @@ public class TrackRun extends Activity implements OnMapReadyCallback {
         }
         // Else save waypoints
         else {
-            // Temporary string to hold the marker lat/long coordinates - will hold cords for every marker on a new line for easier parsing later.
-            // Defaulted to hold the user's current position.
-            String tempLatLong = String.valueOf(latitude) + "," + String.valueOf(longitude) + "\n";
-            // String to hold the default name of each route, will be configurable by user later
-            String tempRouteName;
+            // Initialising mDbHelper. This is needed in the AsyncTask called below.
+            mDbHelper = DatabaseHelper.getInstance(this);
 
-            DatabaseHelper mDbHelper = DatabaseHelper.getInstance(this);
-            // Gets the data repository in write mode
-            SQLiteDatabase db = mDbHelper.getWritableDatabase();
-            // Sets the tempRouteName that will be used to write a default route name when the user adds a route.
-            // This name will be number of records + 1. User can configure their own name later if they want.
-            tempRouteName = "Route " + String.valueOf(DatabaseHelper.getNumRecords(db, DatabaseContract.SavedRoutesTable.TABLE_NAME) + 1);
+            // The below variables need to be initialised before calling the Async. They won't work if put inside the async as they require operations that can't be
+            // performed if not on the main thread. This is ok as the main point of Async is calling 'getWritableDatabase' on a different thread.
 
-            // Create a new map of values, where column names are the keys
-            ContentValues values = new ContentValues();
-            values.put(DatabaseContract.SavedRoutesTable.COLUMN_NAME_1, tempRouteName);
+            // 'tempDistance' used to calculate the distance of the route
+            tempDistance = String.valueOf(calculateDistance(wayPoints));
+            // 'tempLatLong' holds all the marker lat/long coordinates - will hold cords for every marker on a new line for easier parsing later.
+            // Line below defaults to hold the user's start point of the route (needed as this start point isn't held in 'waypoints').
+            tempLatLong = startLat + "," + startLong + "\n";
+            // now loop through waypoints and add all the cords to tempLatLong
             for (int i = 0; i < wayPoints.size(); i++) {
+                Log.e("debugger", "testing");
                 tempLatLong = tempLatLong + String.valueOf(wayPoints.get(i).getPosition().latitude) + "," + String.valueOf(wayPoints.get(i).getPosition().longitude + "\n");
             }
-            values.put(DatabaseContract.SavedRoutesTable.COLUMN_NAME_2, tempLatLong);
-            values.put(DatabaseContract.SavedRoutesTable.COLUMN_NAME_3, String.valueOf(calculateDistance(wayPoints)));
 
-
-            // Insert the new row, returning the primary key value of the new row
-            long newRowId = db.insert(DatabaseContract.SavedRoutesTable.TABLE_NAME, null, values);
-
-
-            db.close();
-
-            // Finally start the intent to go to SavedRoutes activity
-            Intent intent = new Intent(this, SavedRoutes.class);
-            //start Activity
-            startActivity(intent);
+            // Calling the async task to write the data to the database
+            // An async task is needed here as - following Google developer's recommendations 'getWritableDatabase()' shouldn't be called
+            // in the main thread.
+            new AsyncTaskSaveRoute().execute();
         }
     }
-    */
+
 
     // Gets called when app comes back into view eg after user has hit the home screen and returns to app screen.
     @Override
@@ -346,9 +341,12 @@ public class TrackRun extends Activity implements OnMapReadyCallback {
 
     // Controls what the user first sees on the map (default location, zoom, markers)
     private void configureMapDefault() {
-        customMap.clear(); // Clears current marker before adding an updated one
-        Log.e("TAG", latitude);
+        customMap.clear(); // Clears and current markers before adding new ones
         if (latitude != null) {
+            // Saving the start location cords in these variables (needed later when saving route).
+            startLat = latitude;
+            startLong = longitude;
+
             // Google (2016) CameraUpdateFactory [online]
             // Mountain View, California: Google. Available from
             // https://developers.google.com/android/reference/com/google/android/gms/maps/CameraUpdateFactory [Accessed 27 November 2016].
@@ -362,6 +360,10 @@ public class TrackRun extends Activity implements OnMapReadyCallback {
             currentLocMarker = customMap.addMarker(new MarkerOptions()
                     .position(new LatLng(0, 0))
                     .title("Current Location Unknown"));
+
+            // Saving the start location cords in these variables (needed later when saving route).
+            startLat = latitude;
+            startLong = longitude;
         }
     }
 
@@ -511,4 +513,53 @@ public class TrackRun extends Activity implements OnMapReadyCallback {
             configureMapDefault();
         }
     }
+
+    public class AsyncTaskSaveRoute extends AsyncTask<String, String, String> {
+
+        ProgressDialog pd;
+
+        @Override
+        protected void onPreExecute() {
+            // Progress dialog to let the user know something is happeneing.
+            pd=ProgressDialog.show(TrackRun.this,"","Please Wait",false);
+        }
+
+        @Override
+        protected String doInBackground(String... arg0)  {
+            try {
+                // Gets the data repository in write mode
+                db = mDbHelper.getWritableDatabase();
+
+                // Sets the tempRouteName that will be used to write a default route name when the user adds a route.
+                // This name will be number of records + 1. User can configure their own name later if they want.
+                tempRouteName = "Route " + String.valueOf(DatabaseHelper.getNumRecords(db, DatabaseContract.SavedRoutesTable.TABLE_NAME) + 1);
+
+                // Create a new map of values, where column names are the keys
+                ContentValues values = new ContentValues();
+                values.put(DatabaseContract.SavedRoutesTable.COLUMN_NAME_1, tempRouteName);
+                values.put(DatabaseContract.SavedRoutesTable.COLUMN_NAME_2, tempLatLong);
+                values.put(DatabaseContract.SavedRoutesTable.COLUMN_NAME_3, tempDistance);
+
+                // Insert the new row, returning the primary key value of the new row
+                db.insert(DatabaseContract.SavedRoutesTable.TABLE_NAME, null, values);
+
+                // Closing db connection
+                db.close();
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(String strFromDoInBg) {
+            pd.dismiss();
+            // Finally start the intent to go to SavedRoutes activity
+            Intent intent = new Intent(TrackRun.this, SavedRoutes.class);
+            //start Activity
+            startActivity(intent);
+        }
+    }
+
 }

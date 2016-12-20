@@ -1,35 +1,20 @@
 package jmidds17.runningbuddy;
 
-import android.Manifest;
 import android.app.Activity;
+import android.app.ProgressDialog;
 import android.content.ContentValues;
 import android.content.Context;
-import android.content.IntentSender;
-import android.content.pm.PackageManager;
+import android.content.Intent;
 import android.database.sqlite.SQLiteDatabase;
 import android.location.Location;
+import android.os.AsyncTask;
 import android.os.Bundle;
-import android.support.v4.app.FragmentActivity;
-import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.TextView;
 import android.widget.Toast;
-//imports for google play services
-import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.common.api.PendingResult;
-import com.google.android.gms.common.api.Status;
-import com.google.android.gms.location.LocationListener;
-import com.google.android.gms.location.LocationRequest;
-import com.google.android.gms.location.LocationServices;
-import com.google.android.gms.location.LocationSettingsRequest;
-import com.google.android.gms.location.LocationSettingsResult;
-import com.google.android.gms.location.LocationSettingsStates;
-import com.google.android.gms.location.LocationSettingsStatusCodes;
-// imports for adding google map fragment
+
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
@@ -41,298 +26,82 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 
-// add for saving data
-import java.io.File;
-import java.io.FileOutputStream;
-import java.util.Locale;
-import android.net.Uri;
-
-
-import java.sql.Time;
-import java.text.DateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
-// TODO - delete this, remember directions api key
-// AIzaSyDvBnRK1dbjoHGo9I_5Hsb0f4bxARcda6U
-public class PlanRoute extends Activity {
-/*
-public class PlanRoute extends Activity implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, LocationListener, OnMapReadyCallback {
-    //global variables needed for google play services
-    public GoogleApiClient mGoogleApiClient;
-    public Location mLastLocation;
-    LocationRequest mLocationRequest = new LocationRequest();
-    static public Location mCurrentLocation;
-    boolean mRequestingLocationUpdates;
+public class PlanRoute extends Activity implements OnMapReadyCallback {
+    // Global Variables needed for displaying map and location
+    LocationHelper mLoc;
     private GoogleMap customMap;
-    private Marker currentLocMarker;
-    //String mLastUpdateTime = DateFormat.getDateTimeInstance().format(new Date());
+    public String longitude = "-0.5431253";
+    static String latitude = "53.2260276"; // Default to lincoln just in case
     int markerCount = 1;
-    String markerTitles = "Way point " + markerCount;
     PolylineOptions plannedRoute = new PolylineOptions();
     Polyline polyline;
+    List<Marker> wayPoints = new ArrayList<Marker>();
 
-    // Filename for saving route once user clicks save route button
-    String filename = "savedroute";
-
-
-    public void onMapReady(GoogleMap map) {
-        Log.e("onMapReady", map.toString());
-        customMap = map; // using global variable customMap so it can be changed in other scopes
-        // When map is clicked place a marker
-        // Rathore, A. (2013) Add Marker on Android Google Map via touch or tap.
-        // [stack overflow] 12 September. Available from
-        // https://stackoverflow.com/questions/17143129/add-marker-on-android-google-map-via-touch-or-tap [Accessed 27 November 2016].
-        customMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
-            @Override
-            public void onMapClick(LatLng point) {
-                Marker wayPointM = customMap.addMarker(new MarkerOptions()
-                        .position(new LatLng(point.latitude, point.longitude))
-                        .title(markerTitles)
-                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE))
-                        .draggable(true));
-
-                plannedRoute.add(new LatLng(point.latitude, point.longitude));
-                polyline = customMap.addPolyline(plannedRoute);
-                wayPoints.add(markerCount - 1, wayPointM);
-                markerCount++;
-            }
-        });
-    }
-
-
-
+    // Global variables needed for saving route to database
+    SQLiteDatabase db;
+    DatabaseHelper mDbHelper;
+    String tempLatLong;
+    String tempRouteName;
+    String tempDistance;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         Log.e("onCreate", "huh");
+        // creating instance of locationhelper.
+        mLoc = new LocationHelper(PlanRoute.this);
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_plan_route);
 
         // Getting a handle to the fragment where the map is located
         getMapFragmentHandle();
+    }
 
-        // Create an instance of GoogleAPIClient when activity is created(if one doesn't exist).
-        buildGoogleApiClient();
+    protected void onStart() {
+        mLoc.mGoogleApiClient.connect();
+        super.onStart();
+    }
 
-        createLocationRequest();
-
+    protected void onStop() {
+        mLoc.mGoogleApiClient.disconnect();
+        super.onStop();
     }
 
     @Override
-    public void onConnected(Bundle connectionHint) {
-        Log.e("onConnected", "huh");
-
-        // getting last know location on the phone - not a new location
-        if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            mLastLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
+    protected void onPause() {
+        super.onPause();
+        // stop location updates when activity will go out of focus
+        if (mLoc.mGoogleApiClient.isConnected()){
+            mLoc.stopLocationUpdates();
         }
+    }
 
-        // Google (2016) Receiving Location Updates: Request Location Updates [online]
-        // Mountain View, California: Google. Available from
-        // https://developer.android.com/training/location/receive-location-updates.html [Accessed 23 November 2016].
 
-        // below If refers to a boolean flag that is used to track whether user has turned
-        // location updates on or off
-        // for now i will assume this is true and startLocationUpdates
-        //if (mRequestingLocationUpdates) {
-        //    startLocationUpdates();
-        //}
+    public void textChangeButton(View view) {
+        mLoc = new LocationHelper(PlanRoute.this);
 
-        // Begin tracking current location
-        createLocationRequestBuilder();
-        startLocationUpdates();
+        latitude = mLoc.getLatitude();
+        longitude = mLoc.getLongitude();
 
-        // Setup the map
         configureMapDefault();
     }
 
-    private void getMapFragmentHandle(){
-        Log.e("getMapFragmentHandle", "huh");
+    // Gets called when app comes back into view eg after user has hit the home screen and returns to app screen.
+    @Override
+    public void onResume() {
+        Log.e("TAG", "onResume ");
+        super.onResume();
 
-        // Google (2016) Map Objects [online]
-        // Mountain View, California: Google. Available from
-        // https://developers.google.com/maps/documentation/android-api/map [Accessed 27 November 2016].
-        MapFragment mapFragment = (MapFragment) getFragmentManager()
-                .findFragmentById(R.id.map);
-        mapFragment.getMapAsync(this);
-    }
 
-    private void buildGoogleApiClient(){
-        Log.e("buildGoogleApiClient", "huh");
-        // Google (2016) Getting the Last Known Location [online]
-        // Mountain View, California: Google. Available from
-        // https://developer.android.com/training/location/retrieve-current.html [Accessed 23 November 2016].
-        if (mGoogleApiClient == null) {
-            mGoogleApiClient = new GoogleApiClient.Builder(this)
-                    .addApi(LocationServices.API)
-                    .addConnectionCallbacks(this)
-                    .addOnConnectionFailedListener(this)
-                    .build();
-        }
-    }
-
-    private void createLocationRequestBuilder(){
-        Log.e("createLocRequestBuilder", "huh");
-        if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            createLocationRequest();
-
-            // Google (2016) Changing Location Settings: Get Current Location Settings [online]
-            // Mountain View, California: Google. Available from
-            // https://developer.android.com/training/location/change-location-settings.html [Accessed 23 November 2016].
-            LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder()
-                    .addLocationRequest(mLocationRequest);
-            // Check whether current location settings are satisfied
-            PendingResult<LocationSettingsResult> result =
-                    LocationServices.SettingsApi.checkLocationSettings(mGoogleApiClient,
-                            builder.build());
-        }
-    }
-    // Controls what the user first sees on the map (default location, zoom, markers)
-    private void configureMapDefault() {
-        Log.e("configureMapDefault", "huh");
-
-        customMap.clear(); // Clears current marker before adding an updated one
-        if (mCurrentLocation != null) {
-            // Google (2016) CameraUpdateFactory [online]
-            // Mountain View, California: Google. Available from
-            // https://developers.google.com/android/reference/com/google/android/gms/maps/CameraUpdateFactory [Accessed 27 November 2016].
-            customMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude()), 15) );
-            currentLocMarker = customMap.addMarker(new MarkerOptions()
-                    .position(new LatLng(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude()))
-                    .title("You are here"));
-            plannedRoute.add(new LatLng(mCurrentLocation.getLatitude(),mCurrentLocation.getLongitude()));
-        }
-        else if (mLastLocation != null) {
-            customMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(mLastLocation.getLatitude(), mLastLocation.getLongitude()), 15) );
-            currentLocMarker = customMap.addMarker(new MarkerOptions()
-                    .position(new LatLng(mLastLocation.getLatitude(), mLastLocation.getLongitude()))
-                    .title("You are here"));
-            plannedRoute.add(new LatLng(mLastLocation.getLatitude(),mLastLocation.getLongitude()));
-        } else {
-            // If no location exists, defaults to 0,0 so app doesn't crash
-            currentLocMarker = customMap.addMarker(new MarkerOptions()
-                    .position(new LatLng(0, 0))
-                    .title("Current Location Unknown"));
-        }
-    }
-
-    private void addMarker(){
+        // Getting new location coordinates (before configuring map with these coordinates)
+        new AsyncTaskGetLocation().execute();
 
     }
 
-    protected void createLocationRequest() {
-        Log.e("createLocationRequest", "huh");
-        // Google (2016) Changing Location Settings: Set Up a Location Request [online]
-        // Mountain View, California: Google. Available from
-        // https://developer.android.com/training/location/change-location-settings.html [Accessed 23 November 2016].
-        mLocationRequest.setInterval(1000);
-        mLocationRequest.setFastestInterval(500);
-        mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
-    }
-    List<Marker> wayPoints = new ArrayList<Marker>();
-
-    public void textChangeButton(View view) {
-        Marker wayPointM = customMap.addMarker(new MarkerOptions()
-                .position(currentLocMarker.getPosition())
-                .title(markerTitles)
-                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE))
-                .draggable(true));
-        wayPoints.add(wayPointM);
-        markerCount++;
-    }
-    /*
-    public void saveRoute(View view) {
-        // Creating a file in local storage to save routes to
-        FileOutputStream outputStream;
-        File file = getFileStreamPath(filename);
-
-        // Check if there are any waypoints to be saved so it doesn't try to write a null value to file
-        if (wayPoints.size() > 0) {
-            // Check if file exists. If not - make it.
-            if (file == null || !file.exists()) {
-                try {
-                    outputStream = openFileOutput(filename, MODE_PRIVATE);
-                    // loops through waypoints list and saves every marker location into local storage
-                    for (int i = 0; i < wayPoints.size(); i++) {
-                        outputStream.write(String.valueOf(wayPoints.get(i).getPosition().latitude + "," + wayPoints.get(i).getPosition().longitude).getBytes());
-                        outputStream.write("\r\n".getBytes());
-                    }
-                    outputStream.close();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-            // if file already exists then it will append to that file instead of making a new one
-            else if (file.exists())
-            {
-                try {
-                    outputStream = openFileOutput(filename, Context.MODE_APPEND);
-                    for (int i = 0; i < wayPoints.size(); i++) {
-                        outputStream.write(String.valueOf(wayPoints.get(i).getPosition().latitude + "," + wayPoints.get(i).getPosition().longitude).getBytes());
-                        outputStream.write("\r\n".getBytes());
-                    }
-                    outputStream.close();
-                }
-                catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-            // show toast message for successful save
-            Context context = getApplicationContext();
-            CharSequence text = "Route saved to local storage!";
-            int duration = Toast.LENGTH_LONG;
-            Toast toast = Toast.makeText(context, text, duration);
-            toast.show();
-        }
-        // If there are no waypoints it will tell user that nothing was saved
-        else if (wayPoints.size() == 0)
-        {
-            // show toast message for successful save
-            Context context = getApplicationContext();
-            CharSequence text = "Save failed. No Waypoints to save!";
-            int duration = Toast.LENGTH_LONG;
-            Toast toast = Toast.makeText(context, text, duration);
-            toast.show();
-        }
-    }
-
-
-    public void saveRoute(View view) {
-        String tempLatLong = "";
-        String tempRouteName;
-
-        DatabaseHelper mDbHelper = DatabaseHelper.getInstance(this);
-        // Gets the data repository in write mode
-        SQLiteDatabase db = mDbHelper.getWritableDatabase();
-        // Sets the tempRouteName that will be used to write a default route name when the user adds a route.
-        // This name will be number of records + 1. User can configure their own name later if they want.
-        tempRouteName = String.valueOf(DatabaseHelper.getNumRecords(db, DatabaseContract.SavedRoutesTable.TABLE_NAME) + 1);
-
-        // Create a new map of values, where column names are the keys
-        ContentValues values = new ContentValues();
-        values.put(DatabaseContract.SavedRoutesTable.COLUMN_NAME_1, tempRouteName);
-        for (int i = 0; i < wayPoints.size(); i++) {
-            tempLatLong = tempLatLong + String.valueOf(wayPoints.get(i).getPosition().latitude) + "," + String.valueOf(wayPoints.get(i).getPosition().longitude + "\n");
-        }
-        values.put(DatabaseContract.SavedRoutesTable.COLUMN_NAME_2, tempLatLong);
-        values.put(DatabaseContract.SavedRoutesTable.COLUMN_NAME_3, "Test Distance");
-
-
-        // Insert the new row, returning the primary key value of the new row
-        long newRowId = db.insert(DatabaseContract.SavedRoutesTable.TABLE_NAME, null, values);
-
-
-        db.close();
-
-
-    }
-
-    public void getMarkerPos(){
-    }
-
+    // Resets the map
     public void removeLastMarker(View view){
         markerCount = 1; // resets marker count
         wayPoints.clear(); // clears the listarray of waypoints
@@ -341,50 +110,81 @@ public class PlanRoute extends Activity implements GoogleApiClient.ConnectionCal
         updateUI(); // replaces currentlocation origin marker on map
     }
 
-
-    // Google (2016) Receiving Location Updates: Define the Location Update Callback [online]
-    // Mountain View, California: Google. Available from
-    // https://developer.android.com/training/location/receive-location-updates.html [Accessed 23 November 2016].
-    @Override
-    public void onLocationChanged(Location location) {
-        Log.e("onLocationChanged", "huh");
-
-        mCurrentLocation = location;
-        boolean upDateFlag = false;
-        //mLastUpdateTime = DateFormat.getTimeInstance().format(new Date());
-
-        // If the user is currently planning a route the map will not update upon the gps location changing
-        // If there are no other markers then the map will stay updated with the users movement
-        if (wayPoints.size() <= 0) {
-            updateUI(); // uncomment to keep map updated on location change (prevents planning a route when moving as it resets the map)
-        }
-    }
-
     private void updateUI() {
-        Log.e("updateUI", "huh");
-
         configureMapDefault();
     }
 
-    protected void onStart() {
-        Log.e("onStart", "huh");
+    public void onMapReady(GoogleMap map) {
+        Log.e("onMapReady", map.toString());
 
-        mGoogleApiClient.connect();
-        super.onStart();
+        customMap = map; // using global variable customMap so it can be changed in other scopes
+
+        // When map is clicked place a marker
+        // Rathore, A. (2013) Add Marker on Android Google Map via touch or tap.
+        // [stack overflow] 12 September. Available from
+        // https://stackoverflow.com/questions/17143129/add-marker-on-android-google-map-via-touch-or-tap [Accessed 27 November 2016].
+        customMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
+
+            // Will run when the map is tappen on - this is used to add markers to plot a route
+            @Override
+            public void onMapClick(LatLng point) {
+                // Adding marker to the map
+                // This creates a marker but so it can be saved in the wayPoints list and used later, but doesn't
+                // show the marker on the map - as it can get too clustered with so many markers.
+                Marker wayPointM = customMap.addMarker(new MarkerOptions()
+                        .position(new LatLng(point.latitude, point.longitude))
+                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE))
+                        .visible(false));
+
+                // adding points to the polyline where the new marker is
+                plannedRoute.add(new LatLng(point.latitude, point.longitude))
+                        .width(5);
+
+                // adding the polyline to the map
+                polyline = customMap.addPolyline(plannedRoute);
+
+                // updating waypoints (adding marker to list of markers)
+                wayPoints.add(wayPointM);
+
+                markerCount++;
+            }
+        });
     }
 
-    protected void onStop() {
-        Log.e("onStop", "huh");
+    // Controls what the user first sees on the map (default location, zoom, markers)
+    private void configureMapDefault() {
+        customMap.clear(); // Clears current marker before adding an updated one
+        Log.e("TAG", latitude);
+        if (latitude != null) {
+            // Google (2016) CameraUpdateFactory [online]
+            // Mountain View, California: Google. Available from
+            // https://developers.google.com/android/reference/com/google/android/gms/maps/CameraUpdateFactory [Accessed 27 November 2016].
+            customMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(Double.parseDouble(latitude), Double.parseDouble(longitude)), 15) );
+            customMap.addMarker(new MarkerOptions()
+                    .position(new LatLng(Double.parseDouble(latitude), Double.parseDouble(longitude)))
+                    .title("You are here"));
+            plannedRoute.add(new LatLng(Double.parseDouble(latitude),Double.parseDouble(longitude)));
+        } else {
+            // If no location exists, defaults to 0,0 so app doesn't crash
+            customMap.addMarker(new MarkerOptions()
+                    .position(new LatLng(0, 0))
+                    .title("Current Location Unknown"));
+        }
+    }
 
-        mGoogleApiClient.disconnect();
-        super.onStop();
+    private void getMapFragmentHandle(){
+        // Google (2016) Map Objects [online]
+        // Mountain View, California: Google. Available from
+        // https://developers.google.com/maps/documentation/android-api/map [Accessed 27 November 2016].
+        MapFragment mapFragment = (MapFragment) getFragmentManager()
+                .findFragmentById(R.id.map);
+        mapFragment.getMapAsync(this);
     }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_plan_route, menu);
-
+        getMenuInflater().inflate(R.menu.menu_plan_route2, menu);
         return true;
     }
 
@@ -403,68 +203,166 @@ public class PlanRoute extends Activity implements GoogleApiClient.ConnectionCal
         return super.onOptionsItemSelected(item);
     }
 
-    protected void startLocationUpdates() {
-        Log.e("startLocationUpdates", "huh");
-        // If user has granted permission for the app to access location
-        if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            // TODO: Consider calling
-            //    public void requestPermissions(@NonNull String[] permissions, int requestCode)
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for Activity#requestPermissions for more details.
+    // Saves the current markers as a route to a database and takes the user to SavedRoutes activity.
+    public void saveRouteButton(View view) {
+        // If the user hasn't added any waypoints then it won't save
+        if (wayPoints.size() == 0)
+        {
+            // Show toast message that there is no waypoints to save
+            Context context = getApplicationContext();
+            CharSequence text = "You need at least one Way Point to save a route!";
+            int duration = Toast.LENGTH_LONG;
+            Toast toast = Toast.makeText(context, text, duration);
+            toast.show();
+        }
+        // Else save waypoints
+        else {
+            // Initialising mDbHelper. This is needed in the AsyncTask called below.
+            mDbHelper = DatabaseHelper.getInstance(this);
 
-            // Google (2016) Receiving Location Updates: Request Location Updates [online]
-            // Mountain View, California: Google. Available from
-            // https://developer.android.com/training/location/receive-location-updates.html [Accessed 23 November 2016].
-            LocationServices.FusedLocationApi.requestLocationUpdates(
-                    mGoogleApiClient, mLocationRequest, this);
+            // The below variables need to be initialised before calling the Async. They won't work if put inside the async as they require operations that can't be
+            // performed if not on the main thread. This is ok as the main point of Async is calling 'getWritableDatabase' on a different thread.
+
+            // 'tempDistance' used to calculate the distance of the route
+            tempDistance = String.valueOf(calculateDistance(wayPoints));
+            // Temporary string to hold the marker lat/long coordinates - will hold cords for every marker on a new line for easier parsing later.
+            // Line below defaults to hold the user's current position (the start point of the route).
+            tempLatLong = String.valueOf(latitude) + "," + String.valueOf(longitude) + "\n";
+            // now loop through waypoints and add all the cords to tempLatLong
+            for (int i = 0; i < wayPoints.size(); i++) {
+                Log.e("debugger", "testing");
+                tempLatLong = tempLatLong + String.valueOf(wayPoints.get(i).getPosition().latitude) + "," + String.valueOf(wayPoints.get(i).getPosition().longitude + "\n");
+            }
+
+            // Calling the async task to write the data to the database
+            // An async task is needed here as - following Google developer's recommendations 'getWritableDatabase()' shouldn't be called
+            // in the main thread.
+            new AsyncTaskSaveRoute().execute();
         }
     }
 
-
-    // onPause and stopLocationUpdates can be used to stop updating the location when the activity is
-    // no longer in focus. On resume will restart the location updates when the activity is back in focus.
-
-    // Google (2016) Receiving Location Updates: Stop Location Updates [online]
+    // Using Location.distanceBetween to calculate the run distance. Retruns in kilometers.
+    // Google (2016) Location [online]
     // Mountain View, California: Google. Available from
-    // https://developer.android.com/training/location/receive-location-updates.html [Accessed 24 November 2016].
+    // https://developer.android.com/reference/android/location/Location.html [Accessed 15 December 2016].
+    public float calculateDistance(List<Marker> routeToMeasure){
+        float distance = 0; // double to hold the final tallied distance
+        float[] results = new float[routeToMeasure.size()]; // float array to hold the distances between each location
 
-    @Override
-    protected void onPause() {
-        Log.e("onPause", "huh");
-        super.onPause();
-        stopLocationUpdates();
+        // Getting distance between start point and first waypoint (because start point(current phone location) is not stored in 'wayPoints')
+        Location.distanceBetween(Double.parseDouble(latitude), Double.parseDouble(longitude),
+                routeToMeasure.get(0).getPosition().latitude, routeToMeasure.get(0).getPosition().longitude,
+                results);
+
+        // adding the first distance to 'distance' variable
+        distance = distance + results[0];
+
+        // looping though each waypoint and adding the distance each time
+        for (int i = 0; i < routeToMeasure.size() - 1; i++) {
+            Location.distanceBetween(routeToMeasure.get(i).getPosition().latitude, routeToMeasure.get(i).getPosition().longitude,
+                    routeToMeasure.get(i+1).getPosition().latitude, routeToMeasure.get(i+1).getPosition().longitude,
+                    results);
+
+            // Adding up the distance as it iterates through the way points
+            distance = distance + results[0];
+        }
+        return distance;
     }
 
-    protected void stopLocationUpdates() {
-        Log.e("stopLocationUpdates", "huh");
+    public class AsyncTaskGetLocation extends AsyncTask<String, String, String> {
 
-        LocationServices.FusedLocationApi.removeLocationUpdates(
-                mGoogleApiClient, this);
-    }
+        ProgressDialog pd;
 
-    @Override
-    public void onResume() {
-        Log.e("onResume", "huh");
+        @Override
+        protected void onPreExecute() {
+            Log.e("onPreExecute", "huh");
+            pd=ProgressDialog.show(PlanRoute.this,"","Please Wait",false);
+        }
 
-        super.onResume();
-        if (mGoogleApiClient.isConnected() && !mRequestingLocationUpdates) {
-        startLocationUpdates();
+        @Override
+        protected String doInBackground(String... arg0)  {
+            try {
+
+                while (mLoc.mGoogleApiClient.isConnecting())
+                {
+                    // Log.e("doInBackground ", "its connecting");
+                    publishProgress();
+                    if (mLoc.mGoogleApiClient.isConnected())
+                    {
+                        Log.e("doInBackground ", "mloc connected!");
+                        break;
+                    }
+                }
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(String strFromDoInBg) {
+            Log.e("onPostExecute", "huh");
+            //mLoc.stopLocationUpdates();
+            // updating the text views on the app with new info
+            latitude = mLoc.getLatitude();
+            longitude = mLoc.getLongitude();
+            if(latitude != null)
+            {
+                Log.e("onPostExecute", latitude);
+            }
+
+            // Configure the map
+            configureMapDefault();
+            pd.dismiss();
         }
     }
 
-    @Override
-    public void onConnectionSuspended(int i) {
-        Log.e("onConnectionSuspended", "huh");
+    public class AsyncTaskSaveRoute extends AsyncTask<String, String, String> {
 
+        ProgressDialog pd;
+
+        @Override
+        protected void onPreExecute() {
+            // Progress dialog to let the user know something is happeneing.
+            pd=ProgressDialog.show(PlanRoute.this,"","Please Wait",false);
+        }
+
+        @Override
+        protected String doInBackground(String... arg0)  {
+            try {
+                // Gets the data repository in write mode
+                db = mDbHelper.getWritableDatabase();
+
+                // Sets the tempRouteName that will be used to write a default route name when the user adds a route.
+                // This name will be number of records + 1. User can configure their own name later if they want.
+                tempRouteName = "Route " + String.valueOf(DatabaseHelper.getNumRecords(db, DatabaseContract.SavedRoutesTable.TABLE_NAME) + 1);
+
+                // Create a new map of values, where column names are the keys
+                ContentValues values = new ContentValues();
+                values.put(DatabaseContract.SavedRoutesTable.COLUMN_NAME_1, tempRouteName);
+                values.put(DatabaseContract.SavedRoutesTable.COLUMN_NAME_2, tempLatLong);
+                values.put(DatabaseContract.SavedRoutesTable.COLUMN_NAME_3, tempDistance);
+
+                // Insert the new row, returning the primary key value of the new row
+                db.insert(DatabaseContract.SavedRoutesTable.TABLE_NAME, null, values);
+
+                // Closing db connection
+                db.close();
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(String strFromDoInBg) {
+            pd.dismiss();
+            // Finally start the intent to go to SavedRoutes activity
+            Intent intent = new Intent(PlanRoute.this, SavedRoutes.class);
+            //start Activity
+            startActivity(intent);
+        }
     }
-
-    @Override
-    public void onConnectionFailed(ConnectionResult connectionResult) {
-        Log.e("onConnectionFailed", "huh");
-
-    }
-    */
 }
