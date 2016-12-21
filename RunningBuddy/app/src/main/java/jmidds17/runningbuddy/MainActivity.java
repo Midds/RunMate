@@ -20,6 +20,7 @@ import android.os.AsyncTask;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -149,7 +150,7 @@ public class MainActivity extends Activity {
         boolean isConnected;
         ProgressDialog pd;
         // Set the url of the web service to call. This will be used as default url if LocationHelper
-        // cannot get an updated location to use for whatever reason (gps not enabled).
+        // cannot get an updated location to use for whatever reason such as gps not enabled. This is to ensure that the app doesn't crash.
         String yourServiceUrl = "http://api.openweathermap.org/data/2.5/weather?lat=53.2260276&lon=-0.5431253&units=metric&APPID=9394674264a196a20ada133ea74bc768";
 
 
@@ -174,7 +175,6 @@ public class MainActivity extends Activity {
 
                 String latitude = mLoc.getLatitude();
                 String longitude = mLoc.getLongitude();
-                Log.e("booooggs", latitude);
 
                 // Changes the long and lat in the serviceURL to lat known long/lat
                 if (latitude != null && longitude != null){
@@ -311,8 +311,21 @@ public class MainActivity extends Activity {
             // updating the text views on the app with new info
             setWeatherWidget();
 
-        } catch ( IOException ioe ) {
-            ioe.printStackTrace ( ) ;
+        }
+        catch (FileNotFoundException fE){
+            // This will occur if the user has no backup data saved in file (i.e its the first time they run AND have no internet)
+            // This is ok and it won't crash the app but a toast to tell the user they aren't connected is still used.
+            fE.printStackTrace();
+
+            // Show toast message that there is no waypoints to save
+            Context context = getApplicationContext();
+            CharSequence text = "No Internet connection detected.\nPlease connect and try again.";
+            int duration = Toast.LENGTH_LONG;
+            Toast toast = Toast.makeText(context, text, duration);
+            toast.show();
+        }
+        catch (Exception e){
+            e.printStackTrace();
         }
     }
 

@@ -29,8 +29,6 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -43,8 +41,6 @@ public class TrackRun extends Activity implements OnMapReadyCallback {
     private Marker currentLocMarker;
     static public String latitude = "53.2260276";
     static public String longitude = "-0.5431253";
-    public String startLat;
-    public String startLong;
     long startTime = 0;
     long stopTime = 0;
     long timePassed = 0;
@@ -59,7 +55,7 @@ public class TrackRun extends Activity implements OnMapReadyCallback {
     DatabaseHelper mDbHelper;
     String tempLatLong;
     String tempRouteName;
-    String tempDistance;
+    double tempDistance;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -153,48 +149,6 @@ public class TrackRun extends Activity implements OnMapReadyCallback {
 
     }
 
-    // Using Location.distanceBetween to calculate the run distance. Retruns in kilometers.
-    // Google (2016) Location [online]
-    // Mountain View, California: Google. Available from
-    // https://developer.android.com/reference/android/location/Location.html [Accessed 15 December 2016].
-    public double calculateDistance(List<Marker> routeToMeasure){
-        float distance = 0; // double to hold the final tallied distance
-        float[] results = new float[routeToMeasure.size()]; // float array to hold the distances between each location
-
-        // Getting distance between start point and first waypoint (because start point(current phone location) is not stored in 'wayPoints')
-        Location.distanceBetween(Double.parseDouble(startLat), Double.parseDouble(startLong),
-                routeToMeasure.get(0).getPosition().latitude, routeToMeasure.get(0).getPosition().longitude,
-                results);
-
-        // adding the first distance to 'distance' variable
-        distance = distance + results[0];
-
-        // looping though each waypoint and adding the distance each time
-        for (int i = 0; i < routeToMeasure.size() - 1; i++) {
-            Location.distanceBetween(routeToMeasure.get(i).getPosition().latitude, routeToMeasure.get(i).getPosition().longitude,
-                    routeToMeasure.get(i+1).getPosition().latitude, routeToMeasure.get(i+1).getPosition().longitude,
-                    results);
-
-            // Adding up the distance as it iterates through the way points
-            distance = distance + results[0];
-        }
-
-        // return distance rounded to 2 decimal places
-        return round(distance, 2);
-    }
-
-    // 'round()' method is taken directly from(below), and is used to round a double to a selected amount of decimal places.
-    // Jonik (2010) Round a double to 2 decimal places
-    // [stack overflow] 11 May. Available from
-    // https://stackoverflow.com/questions/2808535/round-a-double-to-2-decimal-places [Accessed 18 December 2016].
-    public double round(double value, int places) {
-        if (places < 0) throw new IllegalArgumentException();
-
-        BigDecimal bd = new BigDecimal(value);
-        bd = bd.setScale(places, RoundingMode.HALF_UP);
-        return bd.doubleValue();
-    }
-
     // Saves the current markers as a route to a database and takes the user to SavedRoutes activity.
     public void saveRoute(View view) {
         // If the user hasn't added any waypoints then it won't save
@@ -216,10 +170,10 @@ public class TrackRun extends Activity implements OnMapReadyCallback {
             // performed if not on the main thread. This is ok as the main point of Async is calling 'getWritableDatabase' on a different thread.
 
             // 'tempDistance' used to calculate the distance of the route
-            tempDistance = String.valueOf(calculateDistance(wayPoints));
+            tempDistance = CalculateDistance.getFinalDistance(wayPoints);
             // 'tempLatLong' holds all the marker lat/long coordinates - will hold cords for every marker on a new line for easier parsing later.
             // Line below defaults to hold the user's start point of the route (needed as this start point isn't held in 'waypoints').
-            tempLatLong = startLat + "," + startLong + "\n";
+            tempLatLong = currentLocMarker.getPosition().latitude + "," + currentLocMarker.getPosition().longitude + "\n";
             // now loop through waypoints and add all the cords to tempLatLong
             for (int i = 0; i < wayPoints.size(); i++) {
                 Log.e("debugger", "testing");
@@ -313,7 +267,7 @@ public class TrackRun extends Activity implements OnMapReadyCallback {
 
                 // Show toast message of the distance between the point clicked and current location
                 Context context = getApplicationContext();
-                double tempDistance = calculateDistance(tempOnClick); // calling calculateDistance with the point clicked and current location
+                double tempDistance = CalculateDistance.getFinalDistance(tempOnClick); // calling calculateDistance with the point clicked and current location
                 CharSequence message;
 
                 // Show a different message depending on the distance away (KM or metres)
@@ -322,7 +276,7 @@ public class TrackRun extends Activity implements OnMapReadyCallback {
                 }
                 else {
                     // tempDistance is dived by 1000 and 'round()' is called to round the number down to 1 decimal place.
-                    message = "Point is " + String.valueOf(round(tempDistance/1000, 1)) + " KM away.";
+                    message = "Point is " + String.valueOf(RoundNumber.round(tempDistance / 1000, 1)) + " KM away.";
                 }
 
                 int duration = Toast.LENGTH_LONG;
@@ -336,10 +290,6 @@ public class TrackRun extends Activity implements OnMapReadyCallback {
     private void configureMapDefault() {
         customMap.clear(); // Clears and current markers before adding new ones
         if (latitude != null) {
-            // Saving the start location cords in these variables (needed later when saving route).
-            startLat = latitude;
-            startLong = longitude;
-
             // Google (2016) CameraUpdateFactory [online]
             // Mountain View, California: Google. Available from
             // https://developers.google.com/android/reference/com/google/android/gms/maps/CameraUpdateFactory [Accessed 27 November 2016].
@@ -348,15 +298,14 @@ public class TrackRun extends Activity implements OnMapReadyCallback {
                     .position(new LatLng(Double.parseDouble(latitude), Double.parseDouble(longitude)))
                     .title("You are here"));
             plannedRoute.add(new LatLng(Double.parseDouble(latitude),Double.parseDouble(longitude)));
+            wayPoints.add(currentLocMarker);
         } else {
             // If no location exists, defaults to 0,0 so app doesn't crash
             currentLocMarker = customMap.addMarker(new MarkerOptions()
                     .position(new LatLng(0, 0))
                     .title("Current Location Unknown"));
 
-            // Saving the start location cords in these variables (needed later when saving route).
-            startLat = latitude;
-            startLong = longitude;
+            wayPoints.add(currentLocMarker);
         }
     }
 
@@ -443,11 +392,6 @@ public class TrackRun extends Activity implements OnMapReadyCallback {
             return null;
         }
 
-        protected void onProgressUpdate()
-        {
-
-        }
-
         @Override
         // Below method will run when service HTTP request is complete, this will stop location updates
         // from LocationHelper, as well as setting the new information to their text views.
@@ -484,9 +428,13 @@ public class TrackRun extends Activity implements OnMapReadyCallback {
                 // Gets the data repository in write mode
                 db = mDbHelper.getWritableDatabase();
 
-                // Sets the tempRouteName that will be used as a default route name when the user adds a route.
-                // This name will be number of records + 1. User can configure their own name later if they want.
-                tempRouteName = "Route " + String.valueOf(DatabaseHelper.getNumRecords(db, DatabaseContract.SavedRoutesTable.TABLE_NAME) + 1);
+                if (timePassed != 0){ // dont want to accidentally divide by 0
+                    timePassed = timePassed / 1000; // converting timepassed to show seconds only
+                }
+
+                // Sets the tempRouteName that will be used to write a default route name when the user adds a route.
+                // This name will be number of the lastRecord _id + 1.
+                tempRouteName = "Route " + String.valueOf( DatabaseHelper.getLast(db, DatabaseContract.SavedRoutesTable.TABLE_NAME)+1);
 
                 // Create a new map of values, where column names are the keys
                 ContentValues values = new ContentValues();

@@ -1,6 +1,7 @@
 package jmidds17.runningbuddy;
 
 import android.content.Context;
+import android.database.Cursor;
 import android.database.DatabaseUtils;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
@@ -18,8 +19,8 @@ import android.database.sqlite.SQLiteOpenHelper;
 public class DatabaseHelper extends SQLiteOpenHelper {
 
     // Using a static getInstance method ensures that 'only one DatabaseHelper class will ever exist
-    // at any given time' (Lockwood, 2012). This was needed as i was getting some database leak warnings in logcat
-    // every time i loaded the app. The following variable mInstance and method getInstance are taken from
+    // at any given time' (Lockwood, 2012). This was needed as i was getting some database leak warnings in logcat.
+    // The following variable mInstance and method getInstance are taken from
     // Lockwood, A. (2012) Correctly Managing your SQLite Database. [blog entry] 21 May. Available from
     // http://www.androiddesignpatterns.com/2012/05/correctly-managing-your-sqlite-database.html [Accessed 18 December 2016].
     private static DatabaseHelper mInstance = null;
@@ -55,6 +56,13 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     static public int getNumRecords (SQLiteDatabase db, String tableName)
     {
         int numRows = (int) DatabaseUtils.longForQuery(db, "SELECT COUNT(*) FROM " + tableName, null);
+        return numRows;
+    }
+
+    // returns the unique id of the last record in the database
+    static public int getLast(SQLiteDatabase db, String tableName)
+    {
+        int numRows = (int) DatabaseUtils.longForQuery(db, "SELECT max(_id) FROM " + tableName, null);
         return numRows;
     }
 }

@@ -15,14 +15,14 @@ import android.os.Parcelable;
 public class Route implements Parcelable {
     public Integer id;
     public String name;
-    public String length;
+    public double length;
     public String waypoints;
     public int numberTimesRan;
-    public String bestTime;
-    public String worstTime;
+    public double bestTime;
+    public double worstTime;
 
 
-    public Route(Integer id, String name, String length, String waypoints, int numbertimesran, String besttime, String worsttime) {
+    public Route(Integer id, String name, double length, String waypoints, int numbertimesran, double besttime, double worsttime) {
         this.id = id;
         this.name = name;
         this.length = length;
@@ -41,11 +41,11 @@ public class Route implements Parcelable {
     public void writeToParcel(Parcel out, int flags) {
         out.writeInt(id);
         out.writeString(name);
-        out.writeString(length);
+        out.writeDouble(length);
         out.writeString(waypoints);
         out.writeInt(numberTimesRan);
-        out.writeString(bestTime);
-        out.writeString(worstTime);
+        out.writeDouble(bestTime);
+        out.writeDouble(worstTime);
     }
 
     public static final Parcelable.Creator<Route> CREATOR
@@ -62,10 +62,10 @@ public class Route implements Parcelable {
     private Route(Parcel in) {
         id = in.readInt();
         name = in.readString();
-        length = in.readString();
+        length = in.readDouble();
         waypoints = in.readString();
         numberTimesRan = in.readInt();
-        bestTime = in.readString();
-        worstTime = in.readString();
+        bestTime = in.readDouble();
+        worstTime = in.readDouble();
     }
 }

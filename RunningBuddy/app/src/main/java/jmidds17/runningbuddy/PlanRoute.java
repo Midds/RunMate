@@ -26,8 +26,6 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -47,7 +45,7 @@ public class PlanRoute extends Activity implements OnMapReadyCallback {
     DatabaseHelper mDbHelper;
     String tempLatLong;
     String tempRouteName;
-    String tempDistance;
+    double tempDistance;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -157,19 +155,23 @@ public class PlanRoute extends Activity implements OnMapReadyCallback {
     private void configureMapDefault() {
         customMap.clear(); // Clears current marker before adding an updated one
         if (latitude != null) {
+
             // Google (2016) CameraUpdateFactory [online]
             // Mountain View, California: Google. Available from
             // https://developers.google.com/android/reference/com/google/android/gms/maps/CameraUpdateFactory [Accessed 27 November 2016].
-            customMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(Double.parseDouble(latitude), Double.parseDouble(longitude)), 15) );
-            customMap.addMarker(new MarkerOptions()
+            customMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(Double.parseDouble(latitude), Double.parseDouble(longitude)), 15));
+            Marker startPosition = customMap.addMarker(new MarkerOptions()
                     .position(new LatLng(Double.parseDouble(latitude), Double.parseDouble(longitude)))
                     .title("You are here"));
             plannedRoute.add(new LatLng(Double.parseDouble(latitude),Double.parseDouble(longitude)));
+            wayPoints.add(startPosition);
         } else {
             // If no location exists, defaults to 0,0 so app doesn't crash
-            customMap.addMarker(new MarkerOptions()
+            Marker startPosition = customMap.addMarker(new MarkerOptions()
                     .position(new LatLng(0, 0))
                     .title("Current Location Unknown"));
+            plannedRoute.add(new LatLng(0,0));
+            wayPoints.add(startPosition);
         }
     }
 
@@ -225,7 +227,7 @@ public class PlanRoute extends Activity implements OnMapReadyCallback {
             // performed if not on the main thread. This is ok as the main point of Async is calling 'getWritableDatabase' on a different thread.
 
             // 'tempDistance' used to calculate the distance of the route
-            tempDistance = String.valueOf(calculateDistance(wayPoints));
+            tempDistance = CalculateDistance.getFinalDistance(wayPoints);
             // Temporary string to hold the marker lat/long coordinates - will hold cords for every marker on a new line for easier parsing later.
             // Line below defaults to hold the user's current position (the start point of the route).
             tempLatLong = String.valueOf(latitude) + "," + String.valueOf(longitude) + "\n";
@@ -240,45 +242,6 @@ public class PlanRoute extends Activity implements OnMapReadyCallback {
             // in the main thread.
             new AsyncTaskSaveRoute().execute();
         }
-    }
-
-    // Using Location.distanceBetween to calculate the run distance. Retruns in kilometers.
-    // Google (2016) Location [online]
-    // Mountain View, California: Google. Available from
-    // https://developer.android.com/reference/android/location/Location.html [Accessed 15 December 2016].
-    public double calculateDistance(List<Marker> routeToMeasure){
-        float distance = 0; // double to hold the final tallied distance
-        float[] results = new float[routeToMeasure.size()]; // float array to hold the distances between each location
-        // Getting distance between start point and first waypoint (because start point(current phone location) is not stored in 'wayPoints')
-        Location.distanceBetween(Double.parseDouble(latitude), Double.parseDouble(longitude),
-                routeToMeasure.get(0).getPosition().latitude, routeToMeasure.get(0).getPosition().longitude,
-                results);
-
-        // adding the first distance to 'distance' variable
-        distance = distance + results[0];
-
-        // looping though each waypoint and adding the distance each time
-        for (int i = 0; i < routeToMeasure.size() - 1; i++) {
-            Location.distanceBetween(routeToMeasure.get(i).getPosition().latitude, routeToMeasure.get(i).getPosition().longitude,
-                    routeToMeasure.get(i+1).getPosition().latitude, routeToMeasure.get(i+1).getPosition().longitude,
-                    results);
-
-            // Adding up the distance as it iterates through the way points
-            distance = distance + results[0];
-        }
-        return round(distance, 2);
-    }
-
-    // 'round()' method is taken directly from(below), and is used to round a double to a selected amount of decimal places.
-    // Jonik (2010) Round a double to 2 decimal places
-    // [stack overflow] 11 May. Available from
-    // https://stackoverflow.com/questions/2808535/round-a-double-to-2-decimal-places [Accessed 18 December 2016].
-    public double round(double value, int places) {
-        if (places < 0) throw new IllegalArgumentException();
-
-        BigDecimal bd = new BigDecimal(value);
-        bd = bd.setScale(places, RoundingMode.HALF_UP);
-        return bd.doubleValue();
     }
 
     public class AsyncTaskGetLocation extends AsyncTask<String, String, String> {
@@ -347,8 +310,8 @@ public class PlanRoute extends Activity implements OnMapReadyCallback {
                 db = mDbHelper.getWritableDatabase();
 
                 // Sets the tempRouteName that will be used to write a default route name when the user adds a route.
-                // This name will be number of records + 1. User can configure their own name later if they want.
-                tempRouteName = "Route " + String.valueOf(DatabaseHelper.getNumRecords(db, DatabaseContract.SavedRoutesTable.TABLE_NAME) + 1);
+                // This name will be number of the lastRecord _id + 1.
+                tempRouteName = "Route " + String.valueOf( DatabaseHelper.getLast(db, DatabaseContract.SavedRoutesTable.TABLE_NAME)+1);
 
                 // Create a new map of values, where column names are the keys
                 ContentValues values = new ContentValues();
@@ -363,8 +326,8 @@ public class PlanRoute extends Activity implements OnMapReadyCallback {
                 ContentValues values2 = new ContentValues();
                 values2.put(DatabaseContract.RouteStatisticsTable.COLUMN_NAME_1, String.valueOf(newRowId)); // route_id
                 values2.put(DatabaseContract.RouteStatisticsTable.COLUMN_NAME_2, 0); // # times ran
-                values2.put(DatabaseContract.RouteStatisticsTable.COLUMN_NAME_3, "0"); // best time
-                values2.put(DatabaseContract.RouteStatisticsTable.COLUMN_NAME_4, "0"); // worst time
+                values2.put(DatabaseContract.RouteStatisticsTable.COLUMN_NAME_3, 0); // best time
+                values2.put(DatabaseContract.RouteStatisticsTable.COLUMN_NAME_4, 0); // worst time
 
                 // Insert the new row for the RouteStatisticsTable
                 db.insert(DatabaseContract.RouteStatisticsTable.TABLE_NAME, null, values2);

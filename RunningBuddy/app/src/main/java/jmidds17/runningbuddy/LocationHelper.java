@@ -42,9 +42,6 @@ public class LocationHelper extends Activity implements GoogleApiClient.Connecti
     private String latitude;
     private String longitude;
     private Context mContext;
-    static public boolean upToDate = false;
-    Activity calleractivity;
-
 
     public LocationHelper(Context context) {
         Log.e("LocationHelper", "huh");
@@ -144,21 +141,16 @@ public class LocationHelper extends Activity implements GoogleApiClient.Connecti
         if (mGoogleApiClient.isConnected() && !mRequestingLocationUpdates) {
             startLocationUpdates();
         }
-
-        upToDate = true; // Stops the loop in connectToApi() now startLocationUpdates() has been called.
     }
 
     @Override
     public void onConnectionSuspended(int i) {
         Log.e("onConnectionSuspended", "huh");
-        upToDate = true; // Stops the loop in connectToApi() if connection gets suspended
-
     }
 
     @Override
     public void onConnectionFailed(ConnectionResult connectionResult) {
         Log.e("onConnectionFailed", "huh");
-        upToDate = true; // Stops the loop in connectToApi() if connection fails
     }
 
     protected void createLocationRequest() {

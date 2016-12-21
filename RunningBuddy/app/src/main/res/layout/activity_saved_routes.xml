@@ -36,12 +36,12 @@
         android:onClick="planNewRoute" />
 
     <!-- ViewBox for route information -->
-    <LinearLayout
+    <RelativeLayout
         android:background="@drawable/weather_widget_border"
         android:id="@+id/viewBox"
         android:orientation="vertical"
         android:layout_width="match_parent"
-        android:layout_height="150dp"
+        android:layout_height="120dp"
         android:layout_above="@+id/addRouteButton"
         android:layout_alignParentStart="true"
         android:layout_marginTop="10dp">
@@ -52,28 +52,57 @@
             android:textAppearance="?android:attr/textAppearanceMedium"
             android:text="Medium Text"
             android:textStyle="bold"
-            android:id="@+id/viewBoxName" />
+            android:id="@+id/viewBoxName"
+            android:visibility="invisible"/>
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textAppearance="?android:attr/textAppearanceMedium"
             android:text="Medium Text"
-            android:id="@+id/viewBoxDistance" />
+            android:layout_below="@id/viewBoxName"
+            android:id="@+id/viewBoxDistance"
+            android:visibility="invisible"/>
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textAppearance="?android:attr/textAppearanceMedium"
             android:text="Medium Text"
-            android:id="@+id/viewBoxStats" />
+            android:layout_below="@id/viewBoxDistance"
+            android:id="@+id/viewBoxStats"
+            android:visibility="invisible"/>
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textAppearance="?android:attr/textAppearanceMedium"
             android:text="Medium Text"
-            android:id="@+id/viewBoxNumberRan" />
-    </LinearLayout>
+            android:layout_below="@id/viewBoxStats"
+            android:id="@+id/viewBoxNumberRan"
+            android:visibility="invisible"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceMedium"
+            android:text="View Info to see more"
+            android:id="@+id/viewBoxSeeMore"
+            android:layout_alignTop="@+id/viewBoxDistance"
+            android:layout_alignParentStart="false"
+            android:layout_alignParentTop="true"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="15dp" />
+
+        <ImageView
+            android:layout_width="232dp"
+            android:layout_height="match_parent"
+            android:id="@+id/runnerIcon"
+            android:src="@drawable/icon"
+            android:layout_gravity="center_horizontal"
+            android:layout_below="@+id/viewBoxDistance"
+            android:layout_centerHorizontal="true" />
+
+    </RelativeLayout>
 
 </RelativeLayout>

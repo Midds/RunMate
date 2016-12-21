@@ -22,7 +22,7 @@
         style="?android:attr/buttonStyleSmall"
         android:layout_width="60dp"
         android:layout_height="wrap_content"
-        android:text="View"
+        android:text="Info"
         android:id="@+id/viewButton"
         android:layout_alignParentTop="true"
         android:layout_toStartOf="@+id/runButton" />

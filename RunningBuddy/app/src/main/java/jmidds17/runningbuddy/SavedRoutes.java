@@ -16,6 +16,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 
@@ -24,13 +25,9 @@ import java.util.ArrayList;
 
 
 public class SavedRoutes extends Activity {
-    DatabaseHelper mDbHelper = DatabaseHelper.getInstance(this);
 
-    Cursor c;
+    // global variables for sqlite
     SQLiteDatabase db;
-
-
-    ArrayList<Route> arrayOfRoutes;
     RoutesAdapter adapter;
     ListView listView;
 
@@ -39,21 +36,20 @@ public class SavedRoutes extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_saved_routes);
-
     }
 
     @Override
     public void onResume() {
         super.onResume();
 
-        // Construct the data source
-        arrayOfRoutes = new ArrayList<Route>();
+        // Construct the data source that will populate the listview
+        ArrayList<Route> arrayOfRoutes = new ArrayList<Route>();
         // Create the adapter to convert the array to views
         adapter = new RoutesAdapter(this, arrayOfRoutes);
         // Attach the adapter to a ListView
         listView = (ListView) findViewById(R.id.routesListView);
 
-        // Call async class which will then open the database
+        // Call async class which will then open the database connection
         new AsyncTaskGetSavedData().execute();
     }
 
@@ -61,18 +57,15 @@ public class SavedRoutes extends Activity {
     protected void onPause() {
         Log.e("TAG", "SavedRoutes onPause ");
         super.onPause();
-        c.close();
-        db.close();
+        db.close(); // close the database connection when activity goes out of view
     }
 
+    // new route button
     public void planNewRoute(View view) {
         //create an intent to start PlanRoute activity
         Intent intent = new Intent(this, PlanRoute.class);
         //start Activity
         startActivity(intent);
-
-
-
     }
 
     @Override
@@ -115,7 +108,6 @@ public class SavedRoutes extends Activity {
                 ListView routesList = (ListView)findViewById(R.id.routesListView);
                 bindRoutesToList(routesList);
 
-
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -142,30 +134,14 @@ public class SavedRoutes extends Activity {
         ListView routesList = (ListView)findViewById(R.id.routesListView);
         if (routesList.getCount() < 1) {
             findViewById(R.id.noRoutesText).setVisibility(View.VISIBLE);
+            findViewById(R.id.viewBox).setVisibility(View.INVISIBLE);
         }
     }
+
+    // called in async task
     public void bindRoutesToList(ListView routesList) {
+        DatabaseHelper mDbHelper = DatabaseHelper.getInstance(this);
         db = mDbHelper.getReadableDatabase();
-
-        // Define a projection that specifies which columns from the database
-        // you will actually use after this query.
-        String[] projection = {
-                DatabaseContract.SavedRoutesTable._ID,
-                DatabaseContract.SavedRoutesTable.COLUMN_NAME_1,
-                DatabaseContract.SavedRoutesTable.COLUMN_NAME_2,
-                DatabaseContract.SavedRoutesTable.COLUMN_NAME_3
-        };
-
-        // Filter results WHERE "title" = 'Route 1'
-        //String selection = DatabaseContract.SavedRoutesTable.COLUMN_NAME_1 + " = ?";
-        String selection = "SELECT * FROM " + DatabaseContract.SavedRoutesTable.TABLE_NAME;
-        Log.e("name of column", DatabaseContract.SavedRoutesTable.COLUMN_NAME_1);
-        String[] selectionArgs = { "Route 1" };
-
-
-        // How you want the results sorted in the resulting Cursor
-        String sortOrder =
-                DatabaseContract.SavedRoutesTable.COLUMN_NAME_2 + " DESC";
 
         String rawJoinQuery = "SELECT "
                 + DatabaseContract.SavedRoutesTable.TABLE_NAME + "."
@@ -193,41 +169,33 @@ public class SavedRoutes extends Activity {
                 + DatabaseContract.SavedRoutesTable.TABLE_NAME + "."
                 + DatabaseContract.SavedRoutesTable._ID;
 
-        Log.e("TAG", rawJoinQuery);
 
-        c = db.rawQuery(rawJoinQuery, null);
+        Cursor c = db.rawQuery(rawJoinQuery, null);
 
         if (c == null)
         {
             Log.e("TAG", "ITS NULL HERE");
         }
-        //String itemName = c.getString(
-        //        c.getColumnIndexOrThrow(DatabaseContract.SavedRoutesTable.COLUMN_NAME_1)
-        // );
-
-
-        Route newRoute;
 
         if(c != null && c.moveToFirst()) {
             do {
                 // Add item to adapter
-                newRoute = new Route(
+                Route newRoute = new Route(
                         c.getInt(c.getColumnIndex("_id")),
                         c.getString(c.getColumnIndex("RunName")),
-                        c.getString(c.getColumnIndex("RunDistance")),
+                        c.getDouble(c.getColumnIndex("RunDistance")),
                         c.getString(c.getColumnIndex("RunWaypoints")),
                         c.getInt(c.getColumnIndex("TimesRan")),
-                        c.getString(c.getColumnIndex("BestTime")),
-                        c.getString(c.getColumnIndex("WorstTime")));
+                        c.getDouble(c.getColumnIndex("BestTime")),
+                        c.getDouble(c.getColumnIndex("WorstTime")));
                 adapter.add(newRoute);
 
             } while (c.moveToNext());
         }
 
-
+        c.close();
 
         listView.setAdapter(adapter);
-        ListView lv1 = (ListView)findViewById(R.id.routesListView);
     }
 
     public void removeRoute(Route route){
@@ -269,21 +237,41 @@ public class SavedRoutes extends Activity {
     }
 
     public void viewRoute(Route route){
+        String distanceType = "m"; // used to assign either metres or kilometers depending on the value of the distance
+
+        // setting  route name
         TextView tv1 = (TextView)findViewById(R.id.viewBoxName);
         tv1.setText(route.name);
         tv1.setVisibility(View.VISIBLE);
 
+        // if route length is more than 1k meters then convert to kilometers
+        if (route.length > 999){
+            route.length = route.length/1000;
+            distanceType = "km";
+        }
+
+        // setting route distance
         TextView tv2 = (TextView)findViewById(R.id.viewBoxDistance);
-        tv2.setText("Distance: " + route.length);
+        tv2.setText("Distance: " + RoundNumber.round(route.length, 2) + distanceType);
         tv2.setVisibility(View.VISIBLE);
 
+        // setting route best & worst times
         TextView tv3 = (TextView)findViewById(R.id.viewBoxStats);
-        tv3.setText("Best Time: " + route.bestTime + "s" + "    Worst Time: " + route.worstTime + "s");
+        tv3.setText("Best Time: " + RoundNumber.round(route.bestTime, 1) + "s" + "   Worst Time: " + RoundNumber.round(route.worstTime, 1) + "s");
         tv3.setVisibility(View.VISIBLE);
 
+        // setting route counter
         TextView tv4 = (TextView)findViewById(R.id.viewBoxNumberRan);
         tv4.setText("Run Counter: " + route.numberTimesRan);
         tv4.setVisibility(View.VISIBLE);
+
+        // removing the image that was in the viewBox
+        ImageView iv2 = (ImageView)findViewById(R.id.runnerIcon);
+        iv2.setVisibility(View.INVISIBLE);
+
+        // removing the text that was in the viewBox
+        TextView tv5 = (TextView)findViewById(R.id.viewBoxSeeMore);
+        tv5.setVisibility(View.INVISIBLE);
     }
 
     // RoutesAdapter is used to bind routes to the listview, this was adapted from a tutorial by CodePath.
@@ -306,8 +294,6 @@ public class SavedRoutes extends Activity {
             }
             // Lookup view for data population
             TextView tv1 = (TextView) convertView.findViewById(R.id.routeName);
-            // TextView tv2 = (TextView) convertView.findViewById(R.id.tvLength);
-            // Populate the data into the template view using the data object
             tv1.setText(route.name);
 
 

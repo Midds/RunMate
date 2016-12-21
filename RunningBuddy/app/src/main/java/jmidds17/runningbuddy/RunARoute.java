@@ -30,8 +30,6 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -45,11 +43,11 @@ public class RunARoute extends Activity implements OnMapReadyCallback {
     static public String latitude = "53.2260276";
     long startTime = 0;
     long stopTime = 0;
-    long timePassed = 0;
+    double timePassed = 0;
     public String startLat;
     public String startLong;
-    public String bestTime;
-    public String worstTime;
+    public double bestTime;
+    public double worstTime;
     Route routeToLoad;
     static int markerCount = 1;
     static Polyline polyline;
@@ -253,19 +251,7 @@ public class RunARoute extends Activity implements OnMapReadyCallback {
         }
 
         // return distance rounded to 2 decimal places
-        return round(distance, 2);
-    }
-
-    // 'round()' method is taken directly from(below), and is used to round a double to a selected amount of decimal places.
-    // Jonik (2010) Round a double to 2 decimal places
-    // [stack overflow] 11 May. Available from
-    // https://stackoverflow.com/questions/2808535/round-a-double-to-2-decimal-places [Accessed 18 December 2016].
-    public double round(double value, int places) {
-        if (places < 0) throw new IllegalArgumentException();
-
-        BigDecimal bd = new BigDecimal(value);
-        bd = bd.setScale(places, RoundingMode.HALF_UP);
-        return bd.doubleValue();
+        return RoundNumber.round(distance, 2);
     }
 
     // Saves the current markers as a route to a database and takes the user to SavedRoutes activity.
@@ -552,15 +538,15 @@ public class RunARoute extends Activity implements OnMapReadyCallback {
                 // updating run count
                 values.put(DatabaseContract.RouteStatisticsTable.COLUMN_NAME_2, routeToLoad.numberTimesRan + 1);
                 // If new time is faster than the saved best time, then update with the new best time
-                if ((int)timePassed < Double.parseDouble(bestTime)){
+                if ((int)timePassed < bestTime){
                     values.put(DatabaseContract.RouteStatisticsTable.COLUMN_NAME_3, timePassed);
                 }
                 // else if this is the first time the user has run this route then update with the new time
-                else if (Double.parseDouble(bestTime) == 0){
+                if (bestTime == 0){
                     values.put(DatabaseContract.RouteStatisticsTable.COLUMN_NAME_3, timePassed);
                 }
                 // If new time is slower than saved worst time, then update with the new worst time
-                if ((int)timePassed > Double.parseDouble(worstTime)){
+                if ((int)timePassed > worstTime){
                     // update the worst time with the new worst time
                     values.put(DatabaseContract.RouteStatisticsTable.COLUMN_NAME_4, timePassed);
                 }
