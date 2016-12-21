@@ -6,6 +6,7 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.database.sqlite.SQLiteDatabase;
+import android.graphics.Color;
 import android.location.Location;
 import android.os.AsyncTask;
 import android.os.SystemClock;
@@ -100,8 +101,6 @@ public class TrackRun extends Activity implements OnMapReadyCallback {
             latitude = mLoc.getLatitude();
             longitude = mLoc.getLongitude();
 
-            Log.e("new latitude", latitude);
-
             updateMap();
         }
     }
@@ -112,6 +111,7 @@ public class TrackRun extends Activity implements OnMapReadyCallback {
         ch1.setBase(startTime);
         ch1.start();
         timer = true;
+        getUpdates();
 
         // greying out the button once the timer is started
         Button startButton = (Button)findViewById(R.id.startRunButton);
@@ -216,27 +216,33 @@ public class TrackRun extends Activity implements OnMapReadyCallback {
     }
 
     static private void updateMap(){
-        // Adding marker to the map
-        // This creates a marker but so it can be saved in the wayPoints list and used later, but doesn't
-        // show the marker on the map - as it can get too clustered with so many markers.
-        Marker wayPointM = customMap.addMarker(new MarkerOptions()
-                .position(new LatLng(Double.parseDouble(latitude), Double.parseDouble(longitude)))
-                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE))
-                .visible(false));
+        try {
+            // Adding marker to the map
+            // This creates a marker but so it can be saved in the wayPoints list and used later, but doesn't
+            // show the marker on the map - as it can get too clustered with so many markers.
+            Marker wayPointM = customMap.addMarker(new MarkerOptions()
+                    .position(new LatLng(Double.parseDouble(latitude), Double.parseDouble(longitude)))
+                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE))
+                    .visible(false));
 
-        // adding points to the polyline where the new marker is
-        plannedRoute.add(new LatLng(Double.parseDouble(latitude), Double.parseDouble(longitude)))
-                .width(5);
+            // adding points to the polyline where the new marker is
+            plannedRoute.add(new LatLng(Double.parseDouble(latitude), Double.parseDouble(longitude)))
+                    .color(Color.BLUE)
+                    .width(5);
 
-        // adding the polyline to the map
-        polyline = customMap.addPolyline(plannedRoute);
+            // adding the polyline to the map
+            polyline = customMap.addPolyline(plannedRoute);
 
-        // updating waypoints (adding marker to list of markers)
-        wayPoints.add(wayPointM);
+            // updating waypoints (adding marker to list of markers)
+            wayPoints.add(wayPointM);
 
-        customMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(Double.parseDouble(latitude), Double.parseDouble(longitude)), 15));
+            customMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(Double.parseDouble(latitude), Double.parseDouble(longitude)), 15));
 
-        markerCount++;
+            markerCount++;
+        } catch (Exception e){
+            e.printStackTrace();
+        }
+
     }
 
     public void onMapReady(GoogleMap map) {
@@ -249,7 +255,6 @@ public class TrackRun extends Activity implements OnMapReadyCallback {
         // [stack overflow] 12 September. Available from
         // https://stackoverflow.com/questions/17143129/add-marker-on-android-google-map-via-touch-or-tap [Accessed 27 November 2016].
         customMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
-
             // Will run when the map is tapped on - this is used to add markers to plot a route
             @Override
             public void onMapClick(LatLng point) {
@@ -306,6 +311,8 @@ public class TrackRun extends Activity implements OnMapReadyCallback {
                     .title("Current Location Unknown"));
 
             wayPoints.add(currentLocMarker);
+            // Prompting the user to turn location on
+            CallAlertDialog.alert(this);
         }
     }
 

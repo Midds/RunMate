@@ -8,6 +8,8 @@ import java.util.List;
 
 /**
  * Created by James on 10/12/2016.
+ * This class is used in PlanRoute, TrackRun, RunARoute in order to calculate the distance in metres
+ * of a set of waypoints. It will add the distance between each waypoint before returning the final distance.
  */
 public class CalculateDistance {
     // Using Location.distanceBetween to calculate the run distance. Retruns in kilometers.

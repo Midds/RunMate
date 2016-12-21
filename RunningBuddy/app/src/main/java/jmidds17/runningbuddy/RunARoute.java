@@ -64,7 +64,6 @@ public class RunARoute extends Activity implements OnMapReadyCallback {
     SQLiteDatabase db;
     DatabaseHelper mDbHelper;
     String tempLatLong;
-    String tempRouteName;
     String tempDistance;
 
 
@@ -83,17 +82,13 @@ public class RunARoute extends Activity implements OnMapReadyCallback {
         // Getting the extra data sent when this activity was called from SavedRoutes
         Intent intent = getIntent();
         routeToLoad = intent.getExtras().getParcelable("route");
-        if (routeToLoad != null ){
-            Log.e("Here is the route", routeToLoad.waypoints);
-        }
     }
 
-    // Putting the route gotten from the previous activity on the map
+    // Putting the route passed from the previous activity on the map
     public void loadRoute(Route route){
 
         // Resetting plannedRoute before loading more points to the route
         plannedRoute = new PolylineOptions();
-        Marker startRouteMarker;
         boolean doOnce = false;
 
         bestTime = route.bestTime;
@@ -101,8 +96,6 @@ public class RunARoute extends Activity implements OnMapReadyCallback {
 
         // Creating a string array to split the route waypoints line by line. (One location coords per line)
         String lines[] = route.waypoints.split("\\r?\\n");
-
-
 
         // Loop through the string array that holds each waypoint
         // Each string in the array needs to be split again into lat/long (it's stored divided by a comma)
@@ -112,7 +105,7 @@ public class RunARoute extends Activity implements OnMapReadyCallback {
 
             // this if will only be true on the first loop
             if(!doOnce) {
-                // adding the start point to activeRoute polyline this needs to be done only once
+                // adding the start point to activeRoute polyline this needs to be done only once in this loop
                 // (the first loop - as it is that loop that will deal with lines[0] - which is the start coordinates)
                 activeRoute.add(new LatLng(Double.parseDouble(tempLatLong[0]), Double.parseDouble(tempLatLong[1])))
                         .color(Color.BLUE)
@@ -121,7 +114,7 @@ public class RunARoute extends Activity implements OnMapReadyCallback {
                 // adding marker to the plannedRoute start point on the map
                 // this is only really important if the user is starting the activity from a different location to the
                 // start of the run.
-                startRouteMarker = customMap.addMarker(new MarkerOptions()
+                customMap.addMarker(new MarkerOptions()
                         .position(new LatLng(Double.parseDouble(tempLatLong[0]), Double.parseDouble(tempLatLong[1])))
                         .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE))
                         .title("Route Start Point"));
@@ -140,10 +133,8 @@ public class RunARoute extends Activity implements OnMapReadyCallback {
 
             // adding the polyline to the map
             polyline = customMap.addPolyline(plannedRoute);
-
             // updating waypoints (adding marker to list of markers)
             wayPoints.add(wayPointM);
-
             markerCount++;
         }
     }
@@ -224,36 +215,6 @@ public class RunARoute extends Activity implements OnMapReadyCallback {
 
     }
 
-    // Using Location.distanceBetween to calculate the run distance. Retruns in kilometers.
-    // Google (2016) Location [online]
-    // Mountain View, California: Google. Available from
-    // https://developer.android.com/reference/android/location/Location.html [Accessed 15 December 2016].
-    public double calculateDistance(List<Marker> routeToMeasure){
-        float distance = 0; // double to hold the final tallied distance
-        float[] results = new float[routeToMeasure.size()]; // float array to hold the distances between each location
-
-        // Getting distance between start point and first waypoint (because start point(current phone location) is not stored in 'wayPoints')
-        Location.distanceBetween(Double.parseDouble(startLat), Double.parseDouble(startLong),
-                routeToMeasure.get(0).getPosition().latitude, routeToMeasure.get(0).getPosition().longitude,
-                results);
-
-        // adding the first distance to 'distance' variable
-        distance = distance + results[0];
-
-        // looping though each waypoint and adding the distance each time
-        for (int i = 0; i < routeToMeasure.size() - 1; i++) {
-            Location.distanceBetween(routeToMeasure.get(i).getPosition().latitude, routeToMeasure.get(i).getPosition().longitude,
-                    routeToMeasure.get(i+1).getPosition().latitude, routeToMeasure.get(i+1).getPosition().longitude,
-                    results);
-
-            // Adding up the distance as it iterates through the way points
-            distance = distance + results[0];
-        }
-
-        // return distance rounded to 2 decimal places
-        return RoundNumber.round(distance, 2);
-    }
-
     // Saves the current markers as a route to a database and takes the user to SavedRoutes activity.
     public void saveRoute(View view) {
         // If the user hasn't added any waypoints then it won't save
@@ -275,7 +236,7 @@ public class RunARoute extends Activity implements OnMapReadyCallback {
             // performed if not on the main thread. This is ok as the main point of Async is calling 'getWritableDatabase' on a different thread.
 
             // 'tempDistance' used to calculate the distance of the route
-            tempDistance = String.valueOf(calculateDistance(wayPoints));
+            tempDistance = String.valueOf(CalculateDistance.getFinalDistance(wayPoints));
             // 'tempLatLong' holds all the marker lat/long coordinates - will hold cords for every marker on a new line for easier parsing later.
             // Line below defaults to hold the user's start point of the route (needed as this start point isn't held in 'waypoints').
             tempLatLong = startLat + "," + startLong + "\n";
@@ -292,28 +253,11 @@ public class RunARoute extends Activity implements OnMapReadyCallback {
         }
     }
 
-
     // Gets called when app comes back into view eg after user has hit the home screen and returns to app screen.
     @Override
     public void onResume() {
         Log.e("TAG", "onResume ");
         super.onResume();
-
-        //markerCount = 1; // resets marker count
-        //wayPoints.clear(); // clears the listarray of waypoints
-        // customMap.clear(); // removes all custom markers from map
-        //plannedRoute = new PolylineOptions(); // Clears the polyline route on reset
-        // updateUI(); // replaces currentlocation origin marker on map
-        //removeLastMarker();
-
-        if (latitude != null)
-        {
-            Log.e("onResume", String.valueOf(latitude));
-        }
-        else
-        {
-            Log.e("onResume planroute2", "latitude null");
-        }
 
         // Getting new location coordinates (before configuring map with these coordinates)
         new AsyncTaskGetLocation().execute();
@@ -337,55 +281,20 @@ public class RunARoute extends Activity implements OnMapReadyCallback {
 
         // adding the polyline to the map
         polyline = customMap.addPolyline(activeRoute);
-
         // updating newWayPoints (adding marker to list of markers)
         newWayPoints.add(wayPointM);
-
+        // Centring camera
         customMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(Double.parseDouble(latitude), Double.parseDouble(longitude)), 15));
-
         markerCount++;
     }
 
     public void onMapReady(GoogleMap map) {
-        Log.e("onMapReady", map.toString());
-
         customMap = map; // using global variable customMap so it can be changed in other scopes
-
-        // When map is clicked place a marker
-        // Rathore, A. (2013) Add Marker on Android Google Map via touch or tap.
-        // [stack overflow] 12 September. Available from
-        // https://stackoverflow.com/questions/17143129/add-marker-on-android-google-map-via-touch-or-tap [Accessed 27 November 2016].
-        customMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
-
-            // Will run when the map is tapped on - this is used to add markers to plot a route
-            @Override
-            public void onMapClick(LatLng point) {
-                // Adding marker to the map
-                // This creates a marker but so it can be saved in the wayPoints list and used later, but doesn't
-                // show the marker on the map - as it can get too clustered with so many markers.
-                Marker wayPointM = customMap.addMarker(new MarkerOptions()
-                        .position(new LatLng(point.latitude, point.longitude))
-                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE))
-                        .visible(false));
-
-                // adding points to the polyline where the new marker is
-                plannedRoute.add(new LatLng(point.latitude, point.longitude))
-                        .width(5);
-
-                // adding the polyline to the map
-                polyline = customMap.addPolyline(plannedRoute);
-
-                // updating waypoints (adding marker to list of markers)
-                wayPoints.add(wayPointM);
-
-                markerCount++;
-            }
-        });
     }
 
     // Controls what the user first sees on the map (default location, zoom, markers)
     private void configureMapDefault() {
-        customMap.clear(); // Clears current marker before adding an updated one
+        customMap.clear(); // Clears any current markers before adding an updated one
         if (latitude != null) {
             startLat = latitude;
             startLong = longitude;
@@ -394,7 +303,7 @@ public class RunARoute extends Activity implements OnMapReadyCallback {
             // Mountain View, California: Google. Available from
             // https://developers.google.com/android/reference/com/google/android/gms/maps/CameraUpdateFactory [Accessed 27 November 2016].
             customMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(Double.parseDouble(latitude), Double.parseDouble(longitude)), 15) );
-            Marker currentLocMarker = customMap.addMarker(new MarkerOptions()
+            customMap.addMarker(new MarkerOptions()
                     .position(new LatLng(Double.parseDouble(latitude), Double.parseDouble(longitude)))
                     .title("You are here"));
             plannedRoute.add(new LatLng(Double.parseDouble(latitude),Double.parseDouble(longitude)));
@@ -402,9 +311,11 @@ public class RunARoute extends Activity implements OnMapReadyCallback {
             startLat = latitude;
             startLong = longitude;
             // If no location exists, defaults to 0,0 so app doesn't crash
-            Marker currentLocMarker = customMap.addMarker(new MarkerOptions()
+            customMap.addMarker(new MarkerOptions()
                     .position(new LatLng(0, 0))
                     .title("Current Location Unknown"));
+            // Prompt user to turn location settings on
+            CallAlertDialog.alert(RunARoute.this);
         }
     }
 

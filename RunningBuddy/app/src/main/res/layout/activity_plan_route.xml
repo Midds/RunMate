@@ -27,9 +27,9 @@
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Press for location"
+        android:text="Recentre location"
         android:id="@+id/locButton"
-        android:onClick="textChangeButton"
+        android:onClick="centerLocation"
         android:layout_alignEnd="@+id/map" />
 
     <Button

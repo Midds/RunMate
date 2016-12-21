@@ -73,15 +73,15 @@ public class PlanRoute extends Activity implements OnMapReadyCallback {
     @Override
     protected void onPause() {
         super.onPause();
-        // stop location updates when activity will go out of focus
+        // stop location updates when activity goes out of focus
         if (mLoc.mGoogleApiClient.isConnected()){
             mLoc.stopLocationUpdates();
         }
     }
 
-
-    public void textChangeButton(View view) {
-        mLoc = new LocationHelper(PlanRoute.this);
+    // Gets called when user clicks 'Press for Location' button
+    // This will update the current location and recenter the camera on it. As well as removing any added way points.
+    public void centerLocation(View view) {
 
         latitude = mLoc.getLatitude();
         longitude = mLoc.getLongitude();
@@ -95,23 +95,17 @@ public class PlanRoute extends Activity implements OnMapReadyCallback {
         Log.e("TAG", "onResume ");
         super.onResume();
 
-
         // Getting new location coordinates (before configuring map with these coordinates)
         new AsyncTaskGetLocation().execute();
-
     }
 
-    // Resets the map
+    // Resets the map, removing markers and polylines
     public void removeLastMarker(View view){
         markerCount = 1; // resets marker count
         wayPoints.clear(); // clears the listarray of waypoints
         customMap.clear(); // removes all custom markers from map
         plannedRoute = new PolylineOptions(); // Clears the polyline route on reset
-        updateUI(); // replaces currentlocation origin marker on map
-    }
-
-    private void updateUI() {
-        configureMapDefault();
+        configureMapDefault();// replaces currentlocation origin marker on map
     }
 
     public void onMapReady(GoogleMap map) {
@@ -171,6 +165,7 @@ public class PlanRoute extends Activity implements OnMapReadyCallback {
                     .title("Current Location Unknown"));
             plannedRoute.add(new LatLng(0,0));
             wayPoints.add(startPosition);
+            CallAlertDialog.alert(PlanRoute.this);
         }
     }
 
