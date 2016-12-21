@@ -8,7 +8,6 @@ import android.content.Intent;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -28,12 +27,14 @@ import com.google.android.gms.maps.model.PolylineOptions;
 import java.util.ArrayList;
 import java.util.List;
 
+// This activity can be used to plan a route out on a map. This is done by clicking on the map to add
+// way points (markers) to the route.
 public class PlanRoute extends Activity implements OnMapReadyCallback {
     // Global Variables needed for displaying map and location
     LocationHelper mLoc;
     private GoogleMap customMap;
     public String longitude = "-0.5431253";
-    static String latitude = "53.2260276"; // Default to lincoln just in case
+    public String latitude = "53.2260276"; // Default to lincoln just in case
     int markerCount = 1;
     PolylineOptions plannedRoute = new PolylineOptions();
     Polyline polyline;
@@ -42,9 +43,8 @@ public class PlanRoute extends Activity implements OnMapReadyCallback {
     // Global variables needed for saving route to database
     SQLiteDatabase db;
     DatabaseHelper mDbHelper;
-    String tempLatLong;
-    String tempRouteName;
-    double tempDistance;
+    private String tempLatLong;
+    private double tempDistance;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -65,6 +65,7 @@ public class PlanRoute extends Activity implements OnMapReadyCallback {
 
     protected void onStop() {
         super.onStop();
+        // disconnect api client if activity goes out of view
         if (mLoc.mGoogleApiClient.isConnected()){
             mLoc.mGoogleApiClient.disconnect();
         }
@@ -107,8 +108,6 @@ public class PlanRoute extends Activity implements OnMapReadyCallback {
     }
 
     public void onMapReady(GoogleMap map) {
-        Log.e("onMapReady", map.toString());
-
         customMap = map; // using global variable customMap so it can be changed in other scopes
 
         // When map is clicked place a marker
@@ -138,7 +137,7 @@ public class PlanRoute extends Activity implements OnMapReadyCallback {
                 // updating waypoints (adding marker to list of markers)
                 wayPoints.add(wayPointM);
 
-                markerCount++;
+                markerCount++; // keeping track of number of markers
             }
         });
     }
@@ -163,10 +162,11 @@ public class PlanRoute extends Activity implements OnMapReadyCallback {
                     .title("Current Location Unknown"));
             plannedRoute.add(new LatLng(0,0));
             wayPoints.add(startPosition);
-            CallAlertDialog.alert(PlanRoute.this);
+            CallAlertDialog.alert(PlanRoute.this); // if location exists then user doesnt have a gps enabled - so prompt them
         }
     }
 
+    // getting hold of map fragment
     private void getMapFragmentHandle(){
         // Google (2016) Map Objects [online]
         // Mountain View, California: Google. Available from
@@ -235,6 +235,7 @@ public class PlanRoute extends Activity implements OnMapReadyCallback {
         }
     }
 
+    // async task to ensure google api client is fully connected before then getting new location coords in postExecute
     public class AsyncTaskGetLocation extends AsyncTask<String, String, String> {
 
         ProgressDialog pd;
@@ -274,6 +275,7 @@ public class PlanRoute extends Activity implements OnMapReadyCallback {
         }
     }
 
+    // async task to save the route to database
     public class AsyncTaskSaveRoute extends AsyncTask<String, String, String> {
 
         ProgressDialog pd;
@@ -292,7 +294,7 @@ public class PlanRoute extends Activity implements OnMapReadyCallback {
 
                 // Sets the tempRouteName that will be used to write a default route name when the user adds a route.
                 // This name will be number of the lastRecord _id + 1.
-                tempRouteName = "Route " + String.valueOf( DatabaseHelper.getLast(db, DatabaseContract.SavedRoutesTable.TABLE_NAME)+1);
+                String tempRouteName = "Route " + String.valueOf( DatabaseHelper.getLast(db, DatabaseContract.SavedRoutesTable.TABLE_NAME)+1);
 
                 // Create a new map of values, where column names are the keys
                 ContentValues values = new ContentValues();

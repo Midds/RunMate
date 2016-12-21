@@ -28,11 +28,11 @@ import android.widget.*;
 
 public class MainActivity extends Activity {
     // global variables for the weather widget
-    String weatherLocation;
-    String weatherTemperature;
-    String weatherDescription;
-    String weatherWind;
-    String weatherIcon;
+    private String weatherLocation;
+    private String weatherTemperature;
+    private String weatherDescription;
+    private String weatherWind;
+    private String weatherIcon;
     static Bitmap bitmap;
     // filename for saving location data
     String filename = "latestAPIRequest";

@@ -8,10 +8,8 @@ import android.database.sqlite.SQLiteOpenHelper;
 
 
 /**
- * Created by James on 11/12/2016.
- * This class is used to actually create the database. Where DatabaseContract defines the schema of
- * the database, this class will be called from my activity to actually create the database.
- * As with the DatabaseContract. Google's developer tutorial was used heavily to create this class.
+ * Where DatabaseContract defines the schema of the database, this class will be called from an activity to actually
+ * create the database. As with the DatabaseContract. Google's developer documentation was used heavily to create this class.
  * Google (2016) Saving Data in SQL Databases: Define a Schema and Contract [online]
  * Mountain View, California: Google. Available from
  * https://developer.android.com/training/basics/data-storage/databases.html [Accessed 11 December 2016].

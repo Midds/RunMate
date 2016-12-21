@@ -3,11 +3,8 @@ package jmidds17.runningbuddy;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-/**
- * Created by James on 15/12/2016.
- */
 // Class that implements a Route as an object to hold the data pulled from the database
-// Implements parcelable - this lets a Route object get passed between activities (needed for the run button)
+// Implements parcelable - this lets a Route object get passed between activities (needed for the run button in SavedRoutes)
 // In order to implement Parcelable i have adapted code from the google developer documentation here.
 // Google (2016) Parcelable [online]
 // Mountain View, California: Google. Available from

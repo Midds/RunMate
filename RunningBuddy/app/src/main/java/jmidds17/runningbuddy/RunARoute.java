@@ -31,6 +31,8 @@ import com.google.android.gms.maps.model.PolylineOptions;
 import java.util.ArrayList;
 import java.util.List;
 
+// This activity is used to load saved routes onto a map fragment and then track the user's run, this is
+// called when the user clicks the Run button in SavedRoutes.
 public class RunARoute extends Activity implements OnMapReadyCallback {
     //Global Variables
     static LocationHelper mLoc;
@@ -139,11 +141,16 @@ public class RunARoute extends Activity implements OnMapReadyCallback {
     }
 
     protected void onStart() {
+        // connecting the client
+        // (it's ok if this is called more than once throughout the activities in the app - as it's
+        // method in LocationHelper checks if it already exists before connecting so it wont try to connect
+        // if it is already connected)
         mLoc.mGoogleApiClient.connect();
         super.onStart();
     }
 
     protected void onStop() {
+        // making sure location updates stop when activity will go out of focus
         if (mLoc.mGoogleApiClient.isConnected()) {
             mLoc.mGoogleApiClient.disconnect();
         }
@@ -291,6 +298,7 @@ public class RunARoute extends Activity implements OnMapReadyCallback {
     private void configureMapDefault() {
         customMap.clear(); // Clears any current markers before adding an updated one
         if (latitude != null) {
+            // storing star location variables for later
             startLat = latitude;
             startLong = longitude;
 
@@ -314,6 +322,7 @@ public class RunARoute extends Activity implements OnMapReadyCallback {
         }
     }
 
+    // This gets hold of the fragment
     private void getMapFragmentHandle(){
         // Google (2016) Map Objects [online]
         // Mountain View, California: Google. Available from
@@ -346,6 +355,7 @@ public class RunARoute extends Activity implements OnMapReadyCallback {
     }
 
 
+    // async task to ensure that google api client fully connects before trying to get lat/long
     public class AsyncTaskGetLocation extends AsyncTask<String, String, String> {
 
         ProgressDialog pd;
@@ -377,14 +387,7 @@ public class RunARoute extends Activity implements OnMapReadyCallback {
             return null;
         }
 
-        protected void onProgressUpdate()
-        {
-
-        }
-
         @Override
-        // Below method will run when service HTTP request is complete, this will stop location updates
-        // from LocationHelper, as well as setting the new information to their text views.
         protected void onPostExecute(String strFromDoInBg) {
             //mLoc.stopLocationUpdates();
             // updating the text views on the app with new info
@@ -393,11 +396,13 @@ public class RunARoute extends Activity implements OnMapReadyCallback {
 
             // Configure the map
             configureMapDefault();
+            // load the route onto the map
             loadRoute(routeToLoad);
             pd.dismiss();
         }
     }
 
+    // async task to write the new info to the database
     public class AsyncTaskSaveRoute extends AsyncTask<String, String, String> {
 
         ProgressDialog pd;

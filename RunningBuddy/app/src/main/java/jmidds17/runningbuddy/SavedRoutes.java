@@ -8,7 +8,6 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -23,7 +22,7 @@ import android.widget.TextView;
 
 import java.util.ArrayList;
 
-
+// This activity is used to display any saved routes from the database.
 public class SavedRoutes extends Activity {
 
     // global variables for sqlite
@@ -89,6 +88,7 @@ public class SavedRoutes extends Activity {
         return super.onOptionsItemSelected(item);
     }
 
+    // async task to get data from the database and bind it to the listview using a custom adapter
     public class AsyncTaskGetSavedData extends AsyncTask<String, String, String> {
         ProgressDialog pd;
 
@@ -118,7 +118,7 @@ public class SavedRoutes extends Activity {
         }
     }
 
-
+    // if no routes exist then show a message telling user to click new route button and make viewBox invisible
     public void checkRoutesExist(){
         ListView routesList = (ListView)findViewById(R.id.routesListView);
         if (routesList.getCount() < 1) {
@@ -129,98 +129,118 @@ public class SavedRoutes extends Activity {
 
     // called in async task
     public void bindRoutesToList(ListView routesList) {
-        DatabaseHelper mDbHelper = DatabaseHelper.getInstance(this);
-        db = mDbHelper.getReadableDatabase(); //important that this is called in an async task as it can take a long time
+        try{
+            DatabaseHelper mDbHelper = DatabaseHelper.getInstance(this);
+            db = mDbHelper.getReadableDatabase(); //important that this is called in an async task as it can take a long time
 
-        // Crafting the raw sql query that will join the two tables with any relevant columns for this activity
-        String rawJoinQuery = "SELECT "
-                + DatabaseContract.SavedRoutesTable.TABLE_NAME + "."
-                + DatabaseContract.SavedRoutesTable._ID + ", " // route id
-                + DatabaseContract.SavedRoutesTable.TABLE_NAME + "."
-                + DatabaseContract.SavedRoutesTable.COLUMN_NAME_1 + ", " // route name
-                + DatabaseContract.SavedRoutesTable.TABLE_NAME + "."
-                + DatabaseContract.SavedRoutesTable.COLUMN_NAME_3 + ", " // route distance
-                + DatabaseContract.SavedRoutesTable.TABLE_NAME + "."
-                + DatabaseContract.SavedRoutesTable.COLUMN_NAME_2 + ", " // route waypoints
-                + DatabaseContract.RouteStatisticsTable.TABLE_NAME + "."
-                + DatabaseContract.RouteStatisticsTable.COLUMN_NAME_2 + ", " // # times ran
-                + DatabaseContract.RouteStatisticsTable.TABLE_NAME + "."
-                + DatabaseContract.RouteStatisticsTable.COLUMN_NAME_3 + ", " // best time
-                + DatabaseContract.RouteStatisticsTable.TABLE_NAME + "."
-                + DatabaseContract.RouteStatisticsTable.COLUMN_NAME_4 // worst time
-                + " FROM '"
-                + DatabaseContract.RouteStatisticsTable.TABLE_NAME
-                + "' INNER JOIN '"
-                + DatabaseContract.SavedRoutesTable.TABLE_NAME
-                + "' ON "
-                + DatabaseContract.RouteStatisticsTable.TABLE_NAME + "." // where route_id = _id
-                + DatabaseContract.RouteStatisticsTable.COLUMN_NAME_1
-                + "="
-                + DatabaseContract.SavedRoutesTable.TABLE_NAME + "."
-                + DatabaseContract.SavedRoutesTable._ID;
+            // Crafting the raw sql query that will join the two tables with any relevant columns for this activity
+            String rawJoinQuery = "SELECT "
+                    + DatabaseContract.SavedRoutesTable.TABLE_NAME + "."
+                    + DatabaseContract.SavedRoutesTable._ID + ", " // route id
+                    + DatabaseContract.SavedRoutesTable.TABLE_NAME + "."
+                    + DatabaseContract.SavedRoutesTable.COLUMN_NAME_1 + ", " // route name
+                    + DatabaseContract.SavedRoutesTable.TABLE_NAME + "."
+                    + DatabaseContract.SavedRoutesTable.COLUMN_NAME_3 + ", " // route distance
+                    + DatabaseContract.SavedRoutesTable.TABLE_NAME + "."
+                    + DatabaseContract.SavedRoutesTable.COLUMN_NAME_2 + ", " // route waypoints
+                    + DatabaseContract.RouteStatisticsTable.TABLE_NAME + "."
+                    + DatabaseContract.RouteStatisticsTable.COLUMN_NAME_2 + ", " // # times ran
+                    + DatabaseContract.RouteStatisticsTable.TABLE_NAME + "."
+                    + DatabaseContract.RouteStatisticsTable.COLUMN_NAME_3 + ", " // best time
+                    + DatabaseContract.RouteStatisticsTable.TABLE_NAME + "."
+                    + DatabaseContract.RouteStatisticsTable.COLUMN_NAME_4 // worst time
+                    + " FROM '"
+                    + DatabaseContract.RouteStatisticsTable.TABLE_NAME
+                    + "' INNER JOIN '"
+                    + DatabaseContract.SavedRoutesTable.TABLE_NAME
+                    + "' ON "
+                    + DatabaseContract.RouteStatisticsTable.TABLE_NAME + "." // where route_id = _id
+                    + DatabaseContract.RouteStatisticsTable.COLUMN_NAME_1
+                    + "="
+                    + DatabaseContract.SavedRoutesTable.TABLE_NAME + "."
+                    + DatabaseContract.SavedRoutesTable._ID;
 
-        // querying the database
-        Cursor c = db.rawQuery(rawJoinQuery, null);
+            // querying the database
+            Cursor c = db.rawQuery(rawJoinQuery, null);
 
-        if(c != null && c.moveToFirst()) {
-            do {
-                // Add item to adapter
-                Route newRoute = new Route(
-                        c.getInt(c.getColumnIndex("_id")),
-                        c.getString(c.getColumnIndex("RunName")),
-                        c.getDouble(c.getColumnIndex("RunDistance")),
-                        c.getString(c.getColumnIndex("RunWaypoints")),
-                        c.getInt(c.getColumnIndex("TimesRan")),
-                        c.getDouble(c.getColumnIndex("BestTime")),
-                        c.getDouble(c.getColumnIndex("WorstTime")));
-                adapter.add(newRoute);
+            // starts the cursor off at the first record
+            if(c != null && c.moveToFirst()) {
+                do {
+                    // Add item to adapter
+                    Route newRoute = new Route(
+                            c.getInt(c.getColumnIndex("_id")),
+                            c.getString(c.getColumnIndex("RunName")),
+                            c.getDouble(c.getColumnIndex("RunDistance")),
+                            c.getString(c.getColumnIndex("RunWaypoints")),
+                            c.getInt(c.getColumnIndex("TimesRan")),
+                            c.getDouble(c.getColumnIndex("BestTime")),
+                            c.getDouble(c.getColumnIndex("WorstTime")));
+                    adapter.add(newRoute);
 
-            } while (c.moveToNext());
+                } while (c.moveToNext()); // while c can move to next it moves to each record and adds it to the listview
+            }
+
+            if (c != null)
+            {
+                c.close(); //closing cursor
+            }
+
+            listView.setAdapter(adapter);
         }
-
-        c.close(); //closing cursor
-
-        listView.setAdapter(adapter);
+        catch (Exception e){
+            e.printStackTrace();
+        }
     }
 
     public void removeRoute(Route route){
-        // Removing the selected route from the list view
-        adapter.remove(route);
+        try {
+            // Removing the selected route from the list view
+            adapter.remove(route);
 
-        // Deleting the selected route from the database, adapted from
-        // Google (2016) Saving Data in SQL Databases: Delete Information from a Database [online]
-        // Mountain View, California: Google. Available from
-        // https://developer.android.com/training/basics/data-storage/databases.html#DeleteDbRow [Accessed 17 December 2016].
+            // Deleting the selected route from the database, adapted from
+            // Google (2016) Saving Data in SQL Databases: Delete Information from a Database [online]
+            // Mountain View, California: Google. Available from
+            // https://developer.android.com/training/basics/data-storage/databases.html#DeleteDbRow [Accessed 17 December 2016].
 
-        // remove the selected route from the SavedRuns table
-        // Define 'where' part of query.
-        String selection = DatabaseContract.SavedRoutesTable._ID + " LIKE ?";
-        // Specify arguments in placeholder order.
-        String[] selectionArgs = { String.valueOf(route.id) };
-        // Issue SQL statement.
-        db.delete(DatabaseContract.SavedRoutesTable.TABLE_NAME, selection, selectionArgs);
+            // remove the selected route from the SavedRuns table
+            // Define 'where' part of query.
+            String selection = DatabaseContract.SavedRoutesTable._ID + " LIKE ?";
+            // Specify arguments in placeholder order.
+            String[] selectionArgs = { String.valueOf(route.id) };
+            // Issue SQL statement.
+            db.delete(DatabaseContract.SavedRoutesTable.TABLE_NAME, selection, selectionArgs);
 
-        // remove the selected route from the RoutesStatistics table
-        // Define 'where' part of query.
-        String selection2 = DatabaseContract.RouteStatisticsTable._ID + " LIKE ?";
-        // Specify arguments in placeholder order.
-        String[] selectionArgs2 = { String.valueOf(route.id) };
-        // Issue SQL statement.
-        db.delete(DatabaseContract.RouteStatisticsTable.TABLE_NAME, selection2, selectionArgs2);
+            // remove the selected route from the RoutesStatistics table
+            // Define 'where' part of query.
+            String selection2 = DatabaseContract.RouteStatisticsTable._ID + " LIKE ?";
+            // Specify arguments in placeholder order.
+            String[] selectionArgs2 = { String.valueOf(route.id) };
+            // Issue SQL statement.
+            db.delete(DatabaseContract.RouteStatisticsTable.TABLE_NAME, selection2, selectionArgs2);
 
-        // If no routes exist after deleting then display some text
-        checkRoutesExist();
+            // If no routes exist after deleting then display some text
+            checkRoutesExist();
+        }
+        catch (Exception e){
+            e.printStackTrace();
+        }
     }
 
     public void loadRoute(Route route){
-        //create an intent to start RunARoute activity
-        Intent intent = new Intent(this, RunARoute.class);
-        // pass the route that the use just clicked on to the new activity
-        intent.putExtra("route", route);
-        //start Activity
-        startActivity(intent);
+        try{
+            //create an intent to start RunARoute activity
+            Intent intent = new Intent(this, RunARoute.class);
+            // pass the route that the use just clicked on to the new activity
+            intent.putExtra("route", route);
+            //start Activity
+            startActivity(intent);
+        }
+        catch (Exception e){
+            e.printStackTrace();
+        }
     }
 
+    // sets all the text views for the route information widget
     public void viewRoute(Route route){
         String distanceType = "m"; // used to assign either metres or kilometers depending on the value of the distance
 
@@ -229,15 +249,19 @@ public class SavedRoutes extends Activity {
         tv1.setText(route.name);
         tv1.setVisibility(View.VISIBLE);
 
+        // temporary variable needed here so that the actual route.length isn't altered
+        // this was causing a bug with the if statement below where 'm' was displayed by accident where 'km' should have been
+        double routeLengthTemp = route.length;
+
         // if route length is more than 1k meters then convert to kilometers
         if (route.length > 999){
-            route.length = route.length/1000;
+            routeLengthTemp = route.length/1000;
             distanceType = "km";
         }
 
         // setting route distance
         TextView tv2 = (TextView)findViewById(R.id.viewBoxDistance);
-        tv2.setText("Distance: " + RoundNumber.round(route.length, 2) + distanceType);
+        tv2.setText("Distance: " + RoundNumber.round(routeLengthTemp, 2) + distanceType);
         tv2.setVisibility(View.VISIBLE);
 
         // setting route best & worst times
@@ -337,7 +361,6 @@ public class SavedRoutes extends Activity {
     @Override
     protected void onStop() {
         super.onStop();
-        Log.e("onStop", "closing db");
         // Closing the database if the activity goes out of view
         db.close();
     }

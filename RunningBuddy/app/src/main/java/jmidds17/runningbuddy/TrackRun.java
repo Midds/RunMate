@@ -31,6 +31,8 @@ import com.google.android.gms.maps.model.PolylineOptions;
 import java.util.ArrayList;
 import java.util.List;
 
+// This activity is used from the main menu to track a new run. The user can start the timer from this class
+// and any movements will be tracked and a route mad. This can then be saved.
 public class TrackRun extends Activity implements OnMapReadyCallback {
     //Global Variables
     static LocationHelper mLoc;
@@ -248,11 +250,14 @@ public class TrackRun extends Activity implements OnMapReadyCallback {
                         .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE))
                         .visible(false));
 
+                // Creating a temporary List<Marker> with the current position and the position clicked on the map
+                // this is so i can reuse the calculate distance class to show a message to the user of the distance between
+                // the current position and wherever they click
                 List<Marker> tempOnClick = new ArrayList<Marker>();
                 tempOnClick.add(wayPointM);
                 tempOnClick.add(currentLocMarker);
 
-                // Show toast message of the distance between the point clicked and current location
+                // calling calculateDistance class
                 Context context = getApplicationContext();
                 double tempDistance = CalculateDistance.getFinalDistance(tempOnClick); // calling calculateDistance with the point clicked and current location
                 CharSequence message;
@@ -266,6 +271,7 @@ public class TrackRun extends Activity implements OnMapReadyCallback {
                     message = "Point is " + String.valueOf(RoundNumber.round(tempDistance / 1000, 1)) + " KM away.";
                 }
 
+                // Show toast message of the distance between the point clicked and current location
                 int duration = Toast.LENGTH_LONG;
                 Toast toast = Toast.makeText(context, message, duration);
                 toast.show();
@@ -329,7 +335,7 @@ public class TrackRun extends Activity implements OnMapReadyCallback {
         return super.onOptionsItemSelected(item);
     }
 
-
+    // This async task is used to get the current location
     public class AsyncTaskGetLocation extends AsyncTask<String, String, String> {
 
         ProgressDialog pd;
@@ -340,9 +346,7 @@ public class TrackRun extends Activity implements OnMapReadyCallback {
         }
 
         @Override
-        // This method will get the last long/lat from the LocationHelper class to append to the api call URL.
-        // After this the call will be made using the httpConnect class, and the returned JSON will be parsed
-        // and weatherValues will be changed to reflect this.
+        // DoInBackground makes sure that the google api is connected fully before trying to get the lat/long
         protected String doInBackground(String... arg0)  {
             try {
                 while (mLoc.mGoogleApiClient.isConnecting())
@@ -361,8 +365,7 @@ public class TrackRun extends Activity implements OnMapReadyCallback {
         }
 
         @Override
-        // Below method will run when service HTTP request is complete, this will stop location updates
-        // from LocationHelper, as well as setting the new information to their text views.
+        // Once connection is assured, calls the getLatitude and getLongitude methods in locationHelper
         protected void onPostExecute(String strFromDoInBg) {
             // updating the text views on the app with new info
             latitude = mLoc.getLatitude();
@@ -374,6 +377,7 @@ public class TrackRun extends Activity implements OnMapReadyCallback {
         }
     }
 
+    // This async task is used to write data to the database
     public class AsyncTaskSaveRoute extends AsyncTask<String, String, String> {
 
         ProgressDialog pd;
@@ -390,9 +394,8 @@ public class TrackRun extends Activity implements OnMapReadyCallback {
                 // Gets the data repository in write mode
                 db = mDbHelper.getWritableDatabase();
 
-                if (timePassed != 0){ // dont want to accidentally divide by 0
-                    timePassed = timePassed / 1000; // converting timepassed to show seconds only
-                }
+
+                timePassed = timePassed / 1000; // converting timepassed to show seconds only
 
                 // Sets the tempRouteName that will be used to write a default route name when the user adds a route.
                 // This name will be number of the lastRecord _id + 1.
@@ -408,7 +411,7 @@ public class TrackRun extends Activity implements OnMapReadyCallback {
                 // Insert the new row into the database, the new row's primary key is returned in newRowId
                 long newRowId = db.insert(DatabaseContract.SavedRoutesTable.TABLE_NAME, null, values);
 
-                // Another map of values
+                // Another map of values for the other table
                 ContentValues values2 = new ContentValues();
                 // Writing default route data to the RouteStatisticsTable
                 // newRowId can now be used as a Foreign key for this table
@@ -416,7 +419,7 @@ public class TrackRun extends Activity implements OnMapReadyCallback {
                 values2.put(DatabaseContract.RouteStatisticsTable.COLUMN_NAME_2, 1); // # times ran
                 values2.put(DatabaseContract.RouteStatisticsTable.COLUMN_NAME_3, timePassed); // best time
                 values2.put(DatabaseContract.RouteStatisticsTable.COLUMN_NAME_4, timePassed); // worst time
-                // because this is the first time this run has been tracked, columns 3,4 will be the same.
+                // because this is the first time this run has been tracked, columns 3,4 will be the same until it has been tracked at at least twice.
 
                 // Insert the new row into the database
                 db.insert(DatabaseContract.RouteStatisticsTable.TABLE_NAME, null, values2);
@@ -439,5 +442,4 @@ public class TrackRun extends Activity implements OnMapReadyCallback {
             startActivity(intent);
         }
     }
-
 }

@@ -32,6 +32,7 @@ public class DatabaseContract {
         public static final String COLUMN_NAME_2 = "RunWaypoints";
         public static final String COLUMN_NAME_3 = "RunDistance";
 
+        // writing sql statement
         public static final String SQL_CREATE_ENTRIES =
                 "CREATE TABLE " + SavedRoutesTable.TABLE_NAME + " (" +
                         SavedRoutesTable._ID + " INTEGER PRIMARY KEY," +
@@ -51,6 +52,7 @@ public class DatabaseContract {
         public static final String COLUMN_NAME_3 = "BestTime";
         public static final String COLUMN_NAME_4 = "WorstTime";
 
+        // writing the sql statement
         private static final String COMMA_SEP = ",";
         public static final String SQL_CREATE_ENTRIES =
                 "CREATE TABLE " + RouteStatisticsTable.TABLE_NAME + " (" +
