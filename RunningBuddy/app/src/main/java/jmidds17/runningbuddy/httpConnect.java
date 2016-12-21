@@ -2,21 +2,16 @@ package jmidds17.runningbuddy;
 
 /**
  * Created by James on 11/12/2016.
+ * This code has been adapted from the Workshop on restful APIs
  */
 
 // added below imports
 import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLConnection;
-
-import android.app.Activity;
-import android.content.Context;
 import android.util.Log;
 
 

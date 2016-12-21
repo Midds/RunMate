@@ -127,4 +127,28 @@
             android:layout_alignEnd="@+id/weatherWind" />
 
     </RelativeLayout>
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="invisible"
+        android:layout_above="@+id/checkWeather"
+        android:layout_centerHorizontal="true"
+        android:layout_below="@+id/trackRun"
+        android:layout_marginTop="25dp"
+        android:layout_marginLeft="20dp"
+        android:layout_marginRight="20dp"
+        android:layout_marginBottom="25dp"
+        android:id="@+id/weatherFlavourFrame"
+
+        >
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceSmall"
+            android:text=""
+            android:id="@+id/weatherFlavourText"
+            android:layout_gravity="center" />
+    </FrameLayout>
 </RelativeLayout>

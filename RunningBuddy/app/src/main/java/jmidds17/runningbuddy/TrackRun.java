@@ -7,11 +7,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Color;
-import android.location.Location;
 import android.os.AsyncTask;
 import android.os.SystemClock;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -40,8 +38,8 @@ public class TrackRun extends Activity implements OnMapReadyCallback {
 
     static private GoogleMap customMap;
     private Marker currentLocMarker;
-    static public String latitude = "53.2260276";
-    static public String longitude = "-0.5431253";
+    static public String latitude = "53.2260276"; // setting default lat to prevent app crashes
+    static public String longitude = "-0.5431253"; // setting default long to prevent app crashes
     long startTime = 0;
     long stopTime = 0;
     long timePassed = 0;
@@ -60,7 +58,6 @@ public class TrackRun extends Activity implements OnMapReadyCallback {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        Log.e("onCreate", "huh");
         // creating instance of locationhelper.
         mLoc = new LocationHelper(TrackRun.this);
 
@@ -131,8 +128,6 @@ public class TrackRun extends Activity implements OnMapReadyCallback {
         ch1.stop();
         stopTime = ch1.getBase();
         timePassed = SystemClock.elapsedRealtime() - stopTime;
-        Log.e("stop time = ", String.valueOf(stopTime));
-        Log.e("time passed = ", String.valueOf(timePassed / 1000));
         timer = false;
 
         // greying out the button once the timer has ended
@@ -176,7 +171,6 @@ public class TrackRun extends Activity implements OnMapReadyCallback {
             tempLatLong = currentLocMarker.getPosition().latitude + "," + currentLocMarker.getPosition().longitude + "\n";
             // now loop through waypoints and add all the cords to tempLatLong
             for (int i = 0; i < wayPoints.size(); i++) {
-                Log.e("debugger", "testing");
                 tempLatLong = tempLatLong + String.valueOf(wayPoints.get(i).getPosition().latitude) + "," + String.valueOf(wayPoints.get(i).getPosition().longitude + "\n");
             }
 
@@ -191,7 +185,6 @@ public class TrackRun extends Activity implements OnMapReadyCallback {
     // Gets called when app comes back into view eg after user has hit the home screen and returns to app screen.
     @Override
     public void onResume() {
-        Log.e("TAG", "onResume ");
         super.onResume();
 
         //markerCount = 1; // resets marker count
@@ -200,15 +193,6 @@ public class TrackRun extends Activity implements OnMapReadyCallback {
         //plannedRoute = new PolylineOptions(); // Clears the polyline route on reset
         // updateUI(); // replaces currentlocation origin marker on map
         //removeLastMarker();
-
-        if (latitude != null)
-        {
-            Log.e("onResume", String.valueOf(latitude));
-        }
-        else
-        {
-            Log.e("onResume planroute2", "latitude null");
-        }
 
         // Getting new location coordinates (before configuring map with these coordinates)
         new AsyncTaskGetLocation().execute();
@@ -246,8 +230,6 @@ public class TrackRun extends Activity implements OnMapReadyCallback {
     }
 
     public void onMapReady(GoogleMap map) {
-        Log.e("onMapReady", map.toString());
-
         customMap = map; // using global variable customMap so it can be changed in other scopes
 
         // When map is clicked place a marker
@@ -354,7 +336,6 @@ public class TrackRun extends Activity implements OnMapReadyCallback {
 
         @Override
         protected void onPreExecute() {
-            Log.e("onPreExecute", "huh");
             pd=ProgressDialog.show(TrackRun.this,"","Please Wait",false);
         }
 
@@ -364,35 +345,15 @@ public class TrackRun extends Activity implements OnMapReadyCallback {
         // and weatherValues will be changed to reflect this.
         protected String doInBackground(String... arg0)  {
             try {
-                Log.e("doInBackground ", "planRoute2 huh");
-
-
-
                 while (mLoc.mGoogleApiClient.isConnecting())
                 {
                     // Log.e("doInBackground ", "its connecting");
                     publishProgress();
                     if (mLoc.mGoogleApiClient.isConnected())
                     {
-                        Log.e("doInBackground ", "ITS DONE JIM!");
                         break;
                     }
                 }
-
-                String latitudea = mLoc.getLatitude();
-                String longitudea = mLoc.getLongitude();
-
-
-                if(latitudea != null)
-                {
-                    Log.e("doInBackground jim! ", String.valueOf(latitude));
-                }
-                else
-                {
-                    Log.e("doInBackground", "its null jim");
-
-                }
-
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -403,15 +364,9 @@ public class TrackRun extends Activity implements OnMapReadyCallback {
         // Below method will run when service HTTP request is complete, this will stop location updates
         // from LocationHelper, as well as setting the new information to their text views.
         protected void onPostExecute(String strFromDoInBg) {
-            Log.e("onPostExecute", "huh");
-            //mLoc.stopLocationUpdates();
             // updating the text views on the app with new info
             latitude = mLoc.getLatitude();
             longitude = mLoc.getLongitude();
-            if(latitude != null)
-            {
-                Log.e("onPostExecute", latitude);
-            }
 
             // Configure the map
             configureMapDefault();

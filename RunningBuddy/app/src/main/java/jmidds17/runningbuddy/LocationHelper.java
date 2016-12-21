@@ -198,7 +198,6 @@ public class LocationHelper extends Activity implements GoogleApiClient.Connecti
     // stopLocationUpdates will disconnect from the google api client
     protected void stopLocationUpdates() {
         if (mGoogleApiClient.isConnected()) {
-            //LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
             mGoogleApiClient.disconnect();
         }
     }

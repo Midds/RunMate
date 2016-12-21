@@ -6,7 +6,6 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.database.sqlite.SQLiteDatabase;
-import android.location.Location;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
@@ -49,7 +48,6 @@ public class PlanRoute extends Activity implements OnMapReadyCallback {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        Log.e("onCreate", "huh");
         // creating instance of locationhelper.
         mLoc = new LocationHelper(PlanRoute.this);
 
@@ -66,8 +64,10 @@ public class PlanRoute extends Activity implements OnMapReadyCallback {
     }
 
     protected void onStop() {
-        mLoc.mGoogleApiClient.disconnect();
         super.onStop();
+        if (mLoc.mGoogleApiClient.isConnected()){
+            mLoc.mGoogleApiClient.disconnect();
+        }
     }
 
     @Override
@@ -92,9 +92,7 @@ public class PlanRoute extends Activity implements OnMapReadyCallback {
     // Gets called when app comes back into view eg after user has hit the home screen and returns to app screen.
     @Override
     public void onResume() {
-        Log.e("TAG", "onResume ");
         super.onResume();
-
         // Getting new location coordinates (before configuring map with these coordinates)
         new AsyncTaskGetLocation().execute();
     }
@@ -227,7 +225,6 @@ public class PlanRoute extends Activity implements OnMapReadyCallback {
             tempLatLong = String.valueOf(latitude) + "," + String.valueOf(longitude) + "\n";
             // now loop through waypoints and add all the cords to tempLatLong
             for (int i = 0; i < wayPoints.size(); i++) {
-                Log.e("debugger", "testing");
                 tempLatLong = tempLatLong + String.valueOf(wayPoints.get(i).getPosition().latitude) + "," + String.valueOf(wayPoints.get(i).getPosition().longitude + "\n");
             }
 
@@ -244,21 +241,17 @@ public class PlanRoute extends Activity implements OnMapReadyCallback {
 
         @Override
         protected void onPreExecute() {
-            Log.e("onPreExecute", "huh");
             pd=ProgressDialog.show(PlanRoute.this,"","Please Wait",false);
         }
 
         @Override
         protected String doInBackground(String... arg0)  {
             try {
-
+                // connecting to google api client
                 while (mLoc.mGoogleApiClient.isConnecting())
                 {
-                    // Log.e("doInBackground ", "its connecting");
-                    publishProgress();
                     if (mLoc.mGoogleApiClient.isConnected())
                     {
-                        Log.e("doInBackground ", "mloc connected!");
                         break;
                     }
                 }
@@ -271,15 +264,9 @@ public class PlanRoute extends Activity implements OnMapReadyCallback {
 
         @Override
         protected void onPostExecute(String strFromDoInBg) {
-            Log.e("onPostExecute", "huh");
-            //mLoc.stopLocationUpdates();
             // updating the text views on the app with new info
             latitude = mLoc.getLatitude();
             longitude = mLoc.getLongitude();
-            if(latitude != null)
-            {
-                Log.e("onPostExecute", latitude);
-            }
 
             // Configure the map
             configureMapDefault();
@@ -293,7 +280,7 @@ public class PlanRoute extends Activity implements OnMapReadyCallback {
 
         @Override
         protected void onPreExecute() {
-            // Progress dialog to let the user know something is happeneing.
+            // Progress dialog to let the user know something is happening.
             pd=ProgressDialog.show(PlanRoute.this,"","Please Wait",false);
         }
 

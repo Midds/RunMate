@@ -55,7 +55,6 @@ public class SavedRoutes extends Activity {
 
     @Override
     protected void onPause() {
-        Log.e("TAG", "SavedRoutes onPause ");
         super.onPause();
         db.close(); // close the database connection when activity goes out of view
     }
@@ -91,20 +90,17 @@ public class SavedRoutes extends Activity {
     }
 
     public class AsyncTaskGetSavedData extends AsyncTask<String, String, String> {
-
-        boolean isConnected;
         ProgressDialog pd;
 
         @Override
         protected void onPreExecute() {
-            Log.e("onPreExecute", "huh");
             pd=ProgressDialog.show(SavedRoutes.this,"","Please Wait",false);
         }
 
         @Override
         protected String doInBackground(String... arg0)  {
             try {
-                Log.e("doInBackground", "huh");
+                // binding data to the listview
                 ListView routesList = (ListView)findViewById(R.id.routesListView);
                 bindRoutesToList(routesList);
 
@@ -114,17 +110,10 @@ public class SavedRoutes extends Activity {
             return null;
         }
 
-        protected void onProgressUpdate(String... progress){
-
-        }
-
         @Override
         protected void onPostExecute(String strFromDoInBg) {
-            Log.e("onPostExecute", "huh");
-
             // If no routes exist then display some text
             checkRoutesExist();
-
             pd.dismiss();
         }
     }
@@ -141,8 +130,9 @@ public class SavedRoutes extends Activity {
     // called in async task
     public void bindRoutesToList(ListView routesList) {
         DatabaseHelper mDbHelper = DatabaseHelper.getInstance(this);
-        db = mDbHelper.getReadableDatabase();
+        db = mDbHelper.getReadableDatabase(); //important that this is called in an async task as it can take a long time
 
+        // Crafting the raw sql query that will join the two tables with any relevant columns for this activity
         String rawJoinQuery = "SELECT "
                 + DatabaseContract.SavedRoutesTable.TABLE_NAME + "."
                 + DatabaseContract.SavedRoutesTable._ID + ", " // route id
@@ -169,13 +159,8 @@ public class SavedRoutes extends Activity {
                 + DatabaseContract.SavedRoutesTable.TABLE_NAME + "."
                 + DatabaseContract.SavedRoutesTable._ID;
 
-
+        // querying the database
         Cursor c = db.rawQuery(rawJoinQuery, null);
-
-        if (c == null)
-        {
-            Log.e("TAG", "ITS NULL HERE");
-        }
 
         if(c != null && c.moveToFirst()) {
             do {
@@ -193,7 +178,7 @@ public class SavedRoutes extends Activity {
             } while (c.moveToNext());
         }
 
-        c.close();
+        c.close(); //closing cursor
 
         listView.setAdapter(adapter);
     }
@@ -295,7 +280,6 @@ public class SavedRoutes extends Activity {
             // Lookup view for data population
             TextView tv1 = (TextView) convertView.findViewById(R.id.routeName);
             tv1.setText(route.name);
-
 
             // Delete button
             Button deleteButton = (Button) convertView.findViewById(R.id.deleteButton);

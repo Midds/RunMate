@@ -53,6 +53,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         onUpgrade(db, oldVersion, newVersion);
     }
 
+    // returns number of records
     static public int getNumRecords (SQLiteDatabase db, String tableName)
     {
         int numRows = (int) DatabaseUtils.longForQuery(db, "SELECT COUNT(*) FROM " + tableName, null);

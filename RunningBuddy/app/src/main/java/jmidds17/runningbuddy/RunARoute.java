@@ -7,11 +7,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Color;
-import android.location.Location;
 import android.os.AsyncTask;
 import android.os.SystemClock;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -69,7 +67,6 @@ public class RunARoute extends Activity implements OnMapReadyCallback {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        Log.e("onCreate", "huh");
         // creating instance of locationhelper.
         mLoc = new LocationHelper(RunARoute.this);
 
@@ -91,6 +88,7 @@ public class RunARoute extends Activity implements OnMapReadyCallback {
         plannedRoute = new PolylineOptions();
         boolean doOnce = false;
 
+        // Assigning global best/worst time variables with the new info
         bestTime = route.bestTime;
         worstTime = route.worstTime;
 
@@ -103,7 +101,7 @@ public class RunARoute extends Activity implements OnMapReadyCallback {
             // Once lines [i] has been split - lat will be tempLatLong [i] and long will be tempLatLong[i+1]
             String tempLatLong[] = lines[i].split("\\r?,");
 
-            // this if will only be true on the first loop
+            // this 'if' will only be true on the first iteration of the loop
             if(!doOnce) {
                 // adding the start point to activeRoute polyline this needs to be done only once in this loop
                 // (the first loop - as it is that loop that will deal with lines[0] - which is the start coordinates)
@@ -122,6 +120,7 @@ public class RunARoute extends Activity implements OnMapReadyCallback {
                 doOnce = true;
             }
 
+            // adding markers to the map, but not visible to user as it looks clustered.
             Marker wayPointM = customMap.addMarker(new MarkerOptions()
                     .position(new LatLng(Double.parseDouble(tempLatLong[0]), Double.parseDouble(tempLatLong[1])))
                     .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE))
@@ -145,7 +144,9 @@ public class RunARoute extends Activity implements OnMapReadyCallback {
     }
 
     protected void onStop() {
-        mLoc.mGoogleApiClient.disconnect();
+        if (mLoc.mGoogleApiClient.isConnected()) {
+            mLoc.mGoogleApiClient.disconnect();
+        }
         super.onStop();
     }
 
@@ -170,18 +171,17 @@ public class RunARoute extends Activity implements OnMapReadyCallback {
             latitude = mLoc.getLatitude();
             longitude = mLoc.getLongitude();
 
-            Log.e("new latitude", latitude);
-
             updateMap();
         }
     }
 
     public void startRunTimer(View view) {
         Chronometer ch1 = (Chronometer)findViewById(R.id.chronometer);
+        // setting chronometer so it starts from 0
         startTime = SystemClock.elapsedRealtime();
         ch1.setBase(startTime);
         ch1.start();
-        timer = true;
+        timer = true; // timer used in getUpdates()
 
         // greying out the button once the timer is started
         Button startButton = (Button)findViewById(R.id.startRunButton);
@@ -197,8 +197,6 @@ public class RunARoute extends Activity implements OnMapReadyCallback {
         ch1.stop();
         stopTime = ch1.getBase();
         timePassed = SystemClock.elapsedRealtime() - stopTime;
-        Log.e("stop time = ", String.valueOf(stopTime));
-        Log.e("time passed = ", String.valueOf(timePassed));
         timer = false;
 
         // greying out the button once the timer has ended
@@ -212,7 +210,6 @@ public class RunARoute extends Activity implements OnMapReadyCallback {
         // enabling the button to save the run after you have stopped the timer
         Button saveButton = (Button)findViewById(R.id.saveRunButton);
         saveButton.setEnabled(true);
-
     }
 
     // Saves the current markers as a route to a database and takes the user to SavedRoutes activity.
@@ -242,7 +239,6 @@ public class RunARoute extends Activity implements OnMapReadyCallback {
             tempLatLong = startLat + "," + startLong + "\n";
             // now loop through waypoints and add all the cords to tempLatLong
             for (int i = 0; i < wayPoints.size(); i++) {
-                Log.e("debugger", "testing");
                 tempLatLong = tempLatLong + String.valueOf(wayPoints.get(i).getPosition().latitude) + "," + String.valueOf(wayPoints.get(i).getPosition().longitude + "\n");
             }
 
@@ -256,7 +252,6 @@ public class RunARoute extends Activity implements OnMapReadyCallback {
     // Gets called when app comes back into view eg after user has hit the home screen and returns to app screen.
     @Override
     public void onResume() {
-        Log.e("TAG", "onResume ");
         super.onResume();
 
         // Getting new location coordinates (before configuring map with these coordinates)
@@ -357,9 +352,7 @@ public class RunARoute extends Activity implements OnMapReadyCallback {
 
         @Override
         protected void onPreExecute() {
-            Log.e("onPreExecute", "huh");
-            pd=ProgressDialog.show(RunARoute.this,"","Please Wait",false);
-
+            pd = ProgressDialog.show(RunARoute.this, "", "Please Wait", false);
         }
 
         @Override
@@ -368,31 +361,14 @@ public class RunARoute extends Activity implements OnMapReadyCallback {
         // and weatherValues will be changed to reflect this.
         protected String doInBackground(String... arg0)  {
             try {
-                Log.e("doInBackground ", "planRoute2 huh");
-
                 while (mLoc.mGoogleApiClient.isConnecting())
                 {
                     // Log.e("doInBackground ", "its connecting");
                     publishProgress();
                     if (mLoc.mGoogleApiClient.isConnected())
                     {
-                        Log.e("doInBackground ", "mloc connected");
                         break;
                     }
-                }
-
-                String latitudea = mLoc.getLatitude();
-                String longitudea = mLoc.getLongitude();
-
-
-                if(latitudea != null)
-                {
-                    Log.e("doInBackground ", String.valueOf(latitude));
-                }
-                else
-                {
-                    Log.e("doInBackground", "its null");
-
                 }
 
             } catch (Exception e) {
@@ -410,15 +386,10 @@ public class RunARoute extends Activity implements OnMapReadyCallback {
         // Below method will run when service HTTP request is complete, this will stop location updates
         // from LocationHelper, as well as setting the new information to their text views.
         protected void onPostExecute(String strFromDoInBg) {
-            Log.e("onPostExecute", "huh");
             //mLoc.stopLocationUpdates();
             // updating the text views on the app with new info
             latitude = mLoc.getLatitude();
             longitude = mLoc.getLongitude();
-            if(latitude != null)
-            {
-                Log.e("onPostExecute", latitude);
-            }
 
             // Configure the map
             configureMapDefault();
