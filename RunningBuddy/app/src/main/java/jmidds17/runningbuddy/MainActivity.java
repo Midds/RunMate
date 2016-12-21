@@ -1,14 +1,18 @@
 package jmidds17.runningbuddy;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.net.Uri;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -49,7 +53,6 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
     }
 
     // Gets called when app comes back into view eg after user has hit the home screen and returns to app screen.
@@ -63,6 +66,7 @@ public class MainActivity extends Activity {
             // This will start the connection to the googleApiClient in LocationHelper class so that if the user
             // presses the check weather button it will be already connected and ready to get location
             mLoc = new LocationHelper(MainActivity.this);
+
         }
         catch (Exception e){
             e.printStackTrace();
@@ -109,8 +113,6 @@ public class MainActivity extends Activity {
         startActivity(intent);
     }
 
-
-
     public void configureWeather(View view) {
 
         mLoc.connectToApi();
@@ -147,6 +149,7 @@ public class MainActivity extends Activity {
 
     public class AsyncTaskParseJson extends AsyncTask<String, String, String> {
 
+        boolean alertFlag = false;
         boolean isConnected;
         ProgressDialog pd;
         // Set the url of the web service to call. This will be used as default url if LocationHelper
@@ -183,6 +186,14 @@ public class MainActivity extends Activity {
                             latitude + "&lon=" + longitude +
                             "&units=metric&APPID=9394674264a196a20ada133ea74bc768";
                 }
+                else if (latitude == null)
+                {
+                    // At this point if latitude is null it cannot be an internet problem as the app tested for a connection before this in checkWeather()
+                    // This means it must be a GPS issue - i.e location is not active on the phone or there is no gps signal.
+                    // Therefore alertFlag is set to true. On postExecute if alertFlag is true it will call the alertDialog class.
+                    // This has to happen in postExecute as trying to interact with the UI on a background thread gives a java.lang.RuntimeException.
+                    alertFlag = true;
+                }
                 Log.e("doInBg2", yourServiceUrl);
 
                 // create new instance of the httpConnect class
@@ -214,7 +225,6 @@ public class MainActivity extends Activity {
                     // Saving wanted values to file for later use, each value on a new line for easier parsing later on
                     saveLatestRequest(weatherLocation + "\n" + String.valueOf(weatherTemperature) + "\n" + weatherDescription + "\n" + String.valueOf(weatherWind));
                     //saveLatestRequest(json);
-
                 }
                 // If call from httpconnect returns null. Try and access the last file saved.
                 if (json == null) {
@@ -236,6 +246,10 @@ public class MainActivity extends Activity {
             // updating the text views on the app with new info
             setWeatherWidget();
             pd.dismiss();
+            if (alertFlag) {
+                // call showAlertDialog
+                CallAlertDialog.alert(MainActivity.this);
+            }
         }
     }
 

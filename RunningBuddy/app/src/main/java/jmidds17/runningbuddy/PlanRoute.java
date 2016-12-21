@@ -155,7 +155,6 @@ public class PlanRoute extends Activity implements OnMapReadyCallback {
     private void configureMapDefault() {
         customMap.clear(); // Clears current marker before adding an updated one
         if (latitude != null) {
-
             // Google (2016) CameraUpdateFactory [online]
             // Mountain View, California: Google. Available from
             // https://developers.google.com/android/reference/com/google/android/gms/maps/CameraUpdateFactory [Accessed 27 November 2016].
